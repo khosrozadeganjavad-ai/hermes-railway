@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hermes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#000;--card:#111118;--surface:#1a1a24;--accent:#2979ff;--pink:#e91e7a;--purple:#7c3aed;--green:#22c55e;--red:#ef4444;--orange:#f59e0b;--text:#fff;--text2:#8e8ea0;--text3:#4a4a5a;--border:#1e1e2e;--radius:16px}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;position:relative;overflow:hidden}
+.bg-gradient{position:fixed;top:0;left:50%;transform:translateX(-50%);width:480px;height:340px;background:radial-gradient(ellipse at 50% 0%,var(--accent) 0%,color-mix(in srgb,var(--accent) 30%,#000) 30%,#050a1a 65%,#000 100%);z-index:0;pointer-events:none;opacity:.3}
+
+.page{display:none;flex:1;overflow-y:auto;position:relative;z-index:5;padding:0 0 80px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.page::-webkit-scrollbar{width:2px}
+.page::-webkit-scrollbar-thumb{background:#222;border-radius:2px}
+.page.active{display:block}
+
+.header{position:relative;z-index:10;padding:16px 20px 0;display:flex;align-items:center;gap:12px}
+.header .close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer}
+.header .title{flex:1;text-align:center;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.header .title .check{width:18px;height:18px;background:var(--accent);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px}
+.header .menu{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);font-size:16px;cursor:pointer}
+
+.greeting{text-align:center;padding:40px 24px 24px}
+.greeting .logo{width:80px;height:80px;margin:0 auto 20px}
+.greeting .logo svg{width:100%;height:100%}
+.greeting h1{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.greeting p{color:var(--text2);font-size:13px}
+
+.section{padding:0 16px;margin-bottom:20px}
+.section-title{font-size:14px;font-weight:700;margin-bottom:10px;padding:0 4px;display:flex;justify-content:space-between;align-items:center}
+.section-title .more{color:var(--accent);font-size:12px;cursor:pointer}
+
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.card:active{transform:scale(.97);border-color:rgba(41,121,255,.3)}
+.card .card-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+.card h3{font-size:13px;font-weight:600;margin-bottom:4px}
+.card p{font-size:11px;color:var(--text2);line-height:1.4}
+.badge{display:inline-block;background:var(--purple);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;margin-right:4px}
+
+.list-card{background:var(--card);border-radius:var(--radius);overflow:hidden}
+.list-item{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+.list-item:last-child{border-bottom:none}
+.list-item:active{background:var(--surface)}
+.li-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.li-text{flex:1}
+.li-text h4{font-size:13px;font-weight:600}
+.li-text p{font-size:11px;color:var(--text2);margin-top:2px}
+.li-right{color:var(--text3);font-size:14px}
+
+.chat-header{padding:14px 20px;display:flex;align-items:center;gap:12px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.chat-header .avatar{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#4f46e5);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 12px rgba(41,121,255,.3)}
+.chat-header .info{flex:1}
+.chat-header .info h1{font-size:15px;font-weight:700}
+.chat-header .info p{font-size:11px;color:var(--text2)}
+.chat-header .status{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--green);font-weight:500}
+.chat-header .status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(34,197,94,.5)}
+.chat-header-actions{display:flex;gap:6px}
+.chat-header-actions .icon-btn{width:32px;height:32px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+.messages{flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:14px}
+.messages::-webkit-scrollbar{width:2px}
+.messages::-webkit-scrollbar-thumb{background:#222;border-radius:2px}
+.msg{display:flex;gap:10px;max-width:88%;animation:msgIn .3s ease both;position:relative}
+.msg.user{flex-direction:row-reverse;align-self:flex-end}
+.msg.bot{align-self:flex-start}
+.msg .bubble{padding:12px 16px;border-radius:18px;line-height:1.75;font-size:14px;word-wrap:break-word;white-space:pre-wrap}
+.msg.user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.msg.bot .bubble{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
+.msg .avatar-sm{width:28px;height:28px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:3px}
+.msg.bot .avatar-sm{background:linear-gradient(135deg,var(--accent),#4f46e5)}
+.msg.user .avatar-sm{background:var(--surface);border:1px solid var(--border)}
+.msg .bubble img{max-width:100%;border-radius:10px;margin-top:8px;cursor:pointer}
+.msg .reactions{display:flex;gap:4px;margin-top:4px}
+.msg .reactions .react{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2px 8px;font-size:12px;cursor:pointer}
+.msg .reactions .react:hover{border-color:var(--accent)}
+
+.typing{display:flex;gap:4px;padding:6px 4px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:dot 1.4s infinite;opacity:.5}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+
+.input-area{padding:8px 12px 16px;background:var(--bg);flex-shrink:0}
+.input-bar{display:flex;gap:8px;align-items:flex-end;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:8px 8px 8px 14px}
+.input-bar:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 10%,transparent)}
+.input-bar textarea{flex:1;background:transparent;border:none;color:var(--text);font-size:14px;font-family:inherit;resize:none;outline:none;max-height:120px;min-height:20px;line-height:1.5;direction:rtl;padding:4px 0}
+.input-bar textarea::placeholder{color:var(--text3)}
+.btn-row{display:flex;gap:6px;align-items:center}
+.attach-btn,.voice-btn,.send-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.attach-btn,.voice-btn{background:transparent;color:var(--text2);font-size:18px}
+.voice-btn.recording{background:var(--red);color:#fff;animation:pulse 1s infinite}
+.send-btn{background:var(--accent);color:#fff;font-size:15px}
+.send-btn:active{transform:scale(.9)}
+.send-btn:disabled{opacity:.2;transform:none}
+.preview{display:flex;gap:6px;padding:4px 12px;flex-shrink:0}
+.preview-item{position:relative;border-radius:10px;overflow:hidden;border:2px solid var(--accent)}
+.preview-item img{height:60px;display:block}
+.preview-item .remove{position:absolute;top:3px;right:3px;width:20px;height:20px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:10px}
+
+/* Settings */
+.settings-section{padding:16px}
+.settings-section h3{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:.5px}
+.settings-card{background:var(--card);border-radius:var(--radius);overflow:hidden}
+.settings-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;position:relative}
+.settings-item:last-child{border-bottom:none}
+.settings-item:active{background:var(--surface)}
+.settings-item::before{content:'';position:absolute;right:0;top:20%;height:60%;width:3px;background:var(--accent);border-radius:0 3px 3px 0}
+.si-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.si-icon.blue{background:rgba(41,121,255,.15);color:var(--accent)}
+.si-icon.pink{background:rgba(233,30,122,.15);color:var(--pink)}
+.si-icon.purple{background:rgba(124,58,237,.15);color:var(--purple)}
+.si-icon.green{background:rgba(34,197,94,.15);color:var(--green)}
+.si-icon.orange{background:rgba(245,158,11,.15);color:var(--orange)}
+.si-text{flex:1;font-size:13px;font-weight:500}
+.si-value{color:var(--text2);font-size:12px}
+.si-arrow{color:var(--text3);font-size:12px}
+
+/* Theme picker */
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px}
+.theme-dot{width:36px;height:36px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.theme-dot.active{border-color:#fff;transform:scale(1.1)}
+.theme-dot:active{transform:scale(.9)}
+
+/* Search bar */
+.search-bar{display:none;padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--border)}
+.search-bar input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.search-bar input:focus{border-color:var(--accent)}
+.search-bar input::placeholder{color:var(--text3)}
+.search-bar.active{display:block}
+
+/* History panel */
+.history-panel{display:none;position:absolute;inset:0;z-index:50;background:var(--bg);overflow-y:auto}
+.history-panel.active{display:block}
+.history-panel .hp-header{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.history-panel .hp-header h2{flex:1;font-size:16px;font-weight:700}
+.history-panel .hp-item{padding:14px 20px;border-bottom:1px solid var(--border);cursor:pointer}
+.history-panel .hp-item:active{background:var(--surface)}
+.history-panel .hp-item h4{font-size:13px;font-weight:600;margin-bottom:4px}
+.history-panel .hp-item p{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-panel .hp-item .hp-date{font-size:10px;color:var(--text3);margin-top:4px}
+.history-panel .hp-empty{text-align:center;padding:60px 20px;color:var(--text3)}
+.history-panel .hp-delete{color:var(--red);font-size:12px;cursor:pointer;padding:4px 8px;border-radius:6px}
+.history-panel .hp-delete:active{background:rgba(239,68,68,.1)}
+
+/* Bottom Nav */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:480px;max-width:100%;padding:8px 20px 12px;z-index:20}
+.nav-pill{display:flex;background:#16161f;border-radius:20px;padding:5px;border:1px solid var(--border);box-shadow:0 -4px 24px rgba(0,0,0,.4)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;border-radius:16px;cursor:pointer;transition:all .25s;color:var(--text3);font-size:10px;font-weight:500}
+.nav-item.active{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(41,121,255,.3)}
+.nav-item .nav-icon{font-size:17px}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;padding:10px 20px;border-radius:12px;font-size:13px;z-index:100;animation:fadeIn .2s;box-shadow:0 4px 16px rgba(239,68,68,.3)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:200;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s}
+.modal img{max-width:95%;max-height:90vh;border-radius:8px}
+.modal .close{position:absolute;top:16px;left:16px;width:36px;height:36px;background:rgba(255,255,255,.1);border:none;border-radius:50%;color:#fff;font-size:16px;cursor:pointer}
+.share-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s}
+.share-sheet{width:100%;max-width:480px;background:var(--card);border-radius:20px 20px 0 0;padding:20px;animation:slideUp .3s ease}
+.share-sheet h3{font-size:16px;font-weight:700;margin-bottom:16px;text-align:center}
+.share-sheet .share-option{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;cursor:pointer;transition:background .15s}
+.share-sheet .share-option:active{background:var(--surface)}
+.share-sheet .share-option .so-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+
+@keyframes msgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes dot{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-6px);opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="bg-gradient" id="bgGrad"></div>
+
+  <!-- Explore -->
+  <div class="page active" id="pageExplore">
+    <div class="header">
+      <div class="title" style="text-align:left">Hermes <span class="check">&#10003;</span></div>
+      <div class="menu" onclick="switchTab('settings')">&#8942;</div>
+    </div>
+    <div class="greeting">
+      <div class="logo"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="36" fill="none" stroke="rgba(41,121,255,.25)" stroke-width="2"/><text x="40" y="52" text-anchor="middle" font-size="40" fill="var(--accent)" font-family="serif">&#9764;</text></svg></div>
+      <h1 id="greetText">سلام، Javati!</h1>
+      <p id="greetSub" data-i18n="greetSub">دستیار هوش مصنوعی شما</p>
+    </div>
+    <div class="section">
+      <div class="section-title"><span data-i18n="highlights">Highlights</span></div>
+      <div class="card-grid">
+        <div class="card" onclick="switchTab('chat');quickSend('وضعیت سیستم رو بگو')"><div class="card-icon" style="background:rgba(41,121,255,.12)">&#128202;</div><h3><span class="badge">NEW</span> <span data-i18n="c1">وضعیت سیستم</span></h3><p data-i18n="c1d">مشاهده وضعیت فعلی سرور</p></div>
+        <div class="card" onclick="switchTab('chat');quickSend('یه شعر بگو')"><div class="card-icon" style="background:rgba(233,30,122,.12)">&#127917;</div><h3><span class="badge">NEW</span> <span data-i18n="c2">شعر بگو</span></h3><p data-i18n="c2d">یه شعر زیبا برام بخون</p></div>
+        <div class="card" onclick="switchTab('chat');quickSend('کد Python بنویس')"><div class="card-icon" style="background:rgba(124,58,237,.12)">&#128187;</div><h3><span class="badge">NEW</span> <span data-i18n="c3">کد بنویس</span></h3><p data-i18n="c3d">برنامه‌نویسی به هر زبانی</p></div>
+        <div class="card" onclick="switchTab('chat');quickSend('درباره خودت بگو')"><div class="card-icon" style="background:rgba(34,197,94,.12)">&#129302;</div><h3><span class="badge">NEW</span> <span data-i18n="c4">درباره من</span></h3><p data-i18n="c4d">با Hermes بیشتر آشنا شو</p></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title"><span data-i18n="basic">Basic</span></div>
+      <div class="list-card">
+        <div class="list-item" onclick="switchTab('chat')"><div class="li-icon" style="background:rgba(41,121,255,.12);color:var(--accent)">&#128172;</div><div class="li-text"><h4 data-i18n="l1">شروع چت</h4><p data-i18n="l1d">هر سوالی داری بپرس</p></div><div class="li-right">&#10095;</div></div>
+        <div class="list-item" onclick="switchTab('chat');quickSend('یه معما بگو')"><div class="li-icon" style="background:rgba(245,158,11,.12);color:var(--orange)">&#129513;</div><div class="li-text"><h4 data-i18n="l2">بازی فکری</h4><p data-i18n="l2d">معما و چالش ذهنی</p></div><div class="li-right">&#10095;</div></div>
+        <div class="list-item" onclick="switchTab('chat');quickSend('ترجمه کن')"><div class="li-icon" style="background:rgba(124,58,237,.12);color:var(--purple)">&#127760;</div><div class="li-text"><h4 data-i18n="l3">ترجمه</h4><p data-i18n="l3d">ترجمه متن به زبان‌های مختلف</p></div><div class="li-right">&#10095;</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="page" id="pageChat" style="display:none;flex-direction:column">
+    <div class="chat-header">
+      <div class="avatar">&#9764;</div>
+      <div class="info"><h1>Hermes</h1><p data-i18n="chatSub">دستیار هوش مصنوعی</p></div>
+      <div class="chat-header-actions">
+        <button class="icon-btn" onclick="toggleSearch()" title="Search">&#128269;</button>
+        <button class="icon-btn" onclick="showHistory()" title="History">&#128216;</button>
+        <button class="icon-btn" onclick="shareChat()" title="Share">&#128228;</button>
+      </div>
+    </div>
+    <div class="search-bar" id="searchBar"><input type="text" id="searchInput" placeholder="جستجو در چت..." oninput="searchChat(this.value)"></div>
+    <div class="messages" id="messages"></div>
+    <div class="preview" id="preview" style="display:none"></div>
+    <div class="input-area">
+      <div class="input-bar">
+        <button class="attach-btn" id="attachBtn">&#128247;</button>
+        <textarea id="input" rows="1" placeholder="پیامت رو بنویس..."></textarea>
+        <div class="btn-row">
+          <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">&#127908;</button>
+          <button class="send-btn" id="sendBtn" disabled>&#10148;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="history-panel" id="historyPanel">
+    <div class="hp-header">
+      <div class="close" onclick="closeHistory()">&#10005;</div>
+      <h2 data-i18n="history">مکالمات قبلی</h2>
+      <div class="hp-delete" onclick="clearHistory()" data-i18n="clearAll">پاک کردن همه</div>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="page" id="pageSettings">
+    <div class="header">
+      <div class="close" onclick="switchTab('explore')">&#10005;</div>
+      <div class="title">Hermes <span class="check">&#10003;</span></div>
+      <div class="menu">&#8942;</div>
+    </div>
+    <div class="settings-section">
+      <h3>HERMES</h3>
+      <div class="settings-card">
+        <div class="settings-item" onclick="toggleLang()"><div class="si-icon blue">&#127760;</div><div class="si-text" data-i18n="sLang">زبان / Language</div><div class="si-value" id="langVal" data-i18n="sLangVal">فارسی</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="cycleTheme()"><div class="si-icon purple">&#127912;</div><div class="si-text" data-i18n="sTheme">تم رنگی</div><div class="si-value" id="themeVal">آبی</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="toggleDark()"><div class="si-icon pink">&#127769;</div><div class="si-text" data-i18n="sDark">حالت نمایش</div><div class="si-value" id="darkVal" data-i18n="sDarkVal">تاریک</div><div class="si-arrow">&#10095;</div></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3 data-i18n="sProfile">PROFILE</h3>
+      <div class="settings-card">
+        <div class="settings-item"><div class="si-icon green">&#128100;</div><div class="si-text" data-i18n="sAbout">درباره من</div><div class="si-arrow">&#10095;</div></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3 data-i18n="sApp">APP</h3>
+      <div class="settings-card">
+        <div class="settings-item"><div class="si-icon pink">&#9889;</div><div class="si-text" data-i18n="sVer">نسخه اپلیکیشن</div><div class="si-value">2.0.0</div></div>
+        <div class="settings-item"><div class="si-icon orange">&#128272;</div><div class="si-text" data-i18n="sPrivacy">حریم خصوصی</div><div class="si-arrow">&#10095;</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-pill">
+      <div class="nav-item active" id="navExplore" onclick="switchTab('explore')"><span class="nav-icon">&#128269;</span><span data-i18n="nExplore">جستجو</span></div>
+      <div class="nav-item" id="navChat" onclick="switchTab('chat')"><span class="nav-icon">&#128172;</span><span data-i18n="nChat">چت</span></div>
+      <div class="nav-item" id="navSettings" onclick="switchTab('settings')"><span class="nav-icon">&#9881;</span><span data-i18n="nSettings">تنظیمات</span></div>
+    </div>
+  </div>
+</div>
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<script>
+const tg=window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();tg.setHeaderColor('#1a6dff');tg.setBackgroundColor('#000')}
+
+const $=id=>document.getElementById(id);
+const messages=$('messages'),input=$('input'),sendBtn=$('sendBtn'),previewEl=$('preview'),fileInput=$('fileInput'),API=window.location.origin+'/v1/chat/completions';
+let history=loadConversations(),currentId=Date.now().toString(),loading=false,imageData=null,isFA=true,accentIdx=0,isDark=true;
+
+const ACCENTS=['#2979ff','#e91e7a','#7c3aed','#22c55e','#f59e0b','#ef4444'];
+const ACCENT_NAMES={fa:['آبی','صورتی','بنفش','سبز','نارنجی','قرمز'],en:['Blue','Pink','Purple','Green','Orange','Red']};
+const themes=['#2979ff','#e91e7a','#7c3aed','#22c55e','#f59e0b','#ef4444','#06b6d4','#8b5cf6'];
+
+const T={
+  fa:{highlights:'Highlights',basic:'Basic',c1:'وضعیت سیستم',c1d:'مشاهده وضعیت فعلی سرور',c2:'شعر بگو',c2d:'یه شعر زیبا برام بخون',c3:'کد بنویس',c3d:'برنامه‌نویسی به هر زبانی',c4:'درباره من',c4d:'با Hermes بیشتر آشنا شو',l1:'شروع چت',l1d:'هر سوالی داری بپرس',l2:'بازی فکری',l2d:'معما و چالش ذهنی',l3:'ترجمه',l3d:'ترجمه متن به زبان‌های مختلف',chatSub:'دستیار هوش مصنوعی',online:'آنلاین',greetSub:'دستیار هوش مصنوعی شما',sLang:'زبان / Language',sLangVal:'فارسی',sTheme:'تم رنگی',sDark:'حالت نمایش',sDarkVal:'تاریک',sProfile:'PROFILE',sAbout:'درباره من',sApp:'APP',sVer:'نسخه اپلیکیشن',sPrivacy:'حریم خصوصی',nExplore:'جستجو',nChat:'چت',nSettings:'تنظیمات',ph:'پیامت رو بنویس...',sys:'تو Hermes هستی، دستیار هوش مصنوعی Nous Research. به فارسی صحبت کن. مختصر و مفید باش.',err:'خطا: ',conn:'خطای اتصال',photo:'📷 عکس',onlyImg:'فقط عکس',history:'مکالمات قبلی',clearAll:'پاک کردن همه',searchPh:'جستجو در چت...'},
+  en:{highlights:'Highlights',basic:'Basic',c1:'System Status',c1d:'View current server status',c2:'Poetry',c2d:'Recite a beautiful poem',c3:'Write Code',c3d:'Programming in any language',c4:'About Me',c4d:'Get to know Hermes better',l1:'Start Chat',l1d:'Ask me anything',l2:'Brain Game',l2d:'Puzzles and mental challenges',l3:'Translate',l3d:'Translate text to various languages',chatSub:'AI Assistant',online:'Online',greetSub:'Your AI Assistant',sLang:'Language / زبان',sLangVal:'English',sTheme:'Theme Color',sDark:'Appearance',sDarkVal:'Dark',sProfile:'PROFILE',sAbout:'About Me',sApp:'APP',sVer:'App Version',sPrivacy:'Privacy',nExplore:'Explore',nChat:'Chat',nSettings:'Settings',ph:'Type your message...',sys:'You are Hermes, an AI assistant by Nous Research. Be concise and helpful.',err:'Error: ',conn:'Connection error',photo:'📷 Photo',onlyImg:'Images only',history:'Chat History',clearAll:'Clear All',searchPh:'Search in chat...'}
+};
+
+function applyLang(){
+  const t=T[isFA?'fa':'en'];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(t[k])el.textContent=t[k];});
+  $('greetText').textContent=(isFA?'سلام، ':'Hello, ')+'Javati!';
+  $('langVal').textContent=t.sLangVal;
+  $('darkVal').textContent=t.sDarkVal;
+  $('searchInput').placeholder=t.searchPh;
+  input.placeholder=t.ph;
+}
+
+function setAccent(c){document.documentElement.style.setProperty('--accent',c);$('bgGrad').style.background=`radial-gradient(ellipse at 50% 0%,${c} 0%,color-mix(in srgb,${c} 30%,#000) 30%,#050a1a 65%,#000 100%)`;}
+function cycleTheme(){accentIdx=(accentIdx+1)%themes.length;setAccent(accentIdx);$('themeVal').textContent=ACCENT_NAMES[isFA?'fa':'en'][accentIdx];}
+function toggleDark(){isDark=!isDark;document.documentElement.style.setProperty('--bg',isDark?'#000':'#f5f5f5');document.documentElement.style.setProperty('--card',isDark?'#111118':'#fff');document.documentElement.style.setProperty('--surface',isDark?'#1a1a24':'#f0f0f0');document.documentElement.style.setProperty('--text',isDark?'#fff':'#1a1a2e');document.documentElement.style.setProperty('--text2',isDark?'#8e8ea0':'#666');document.documentElement.style.setProperty('--border',isDark?'#1e1e2e':'#e0e0e0');$('darkVal').textContent=isDark?(isFA?'تاریک':'Dark'):(isFA?'روشن':'Light');}
+
+function switchTab(tab){document.querySelectorAll('.page').forEach(p=>{p.style.display='none'});document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(tab==='explore'){$('pageExplore').style.display='block';$('navExplore').classList.add('active')}else if(tab==='chat'){$('pageChat').style.display='flex';$('navChat').classList.add('active');input.focus();scrollDown()}else{$('pageSettings').style.display='block';$('navSettings').classList.add('active')}}
+function toggleLang(){isFA=!isFA;applyLang();}
+
+// Conversations
+function loadConversations(){try{return JSON.parse(localStorage.getItem('hermes_chats')||'{}')}catch(e){return{}}}
+function saveConversations(){localStorage.setItem('hermes_chats',JSON.stringify(history))}
+function getCurrent(){if(!history[currentId])history[currentId]={title:'New chat',messages:[],created:Date.now()};return history[currentId];}
+
+function showHistory(){
+  const panel=$('historyPanel');panel.classList.add('active');
+  const list=$('historyList');list.innerHTML='';
+  const sorted=Object.entries(history).sort((a,b)=>b[1].created-a[1].created);
+  if(!sorted.length){list.innerHTML=`<div class="hp-empty">${isFA?'مکالمه‌ای وجود ندارد':'No conversations yet'}</div>`;return;}
+  sorted.forEach(([id,chat])=>{
+    const d=document.createElement('div');d.className='hp-item';
+    const last=chat.messages.length?chat.messages[chat.messages.length-1].content:'';
+    const preview=typeof last==='string'?last.substring(0,60):'[image]';
+    const date=new Date(chat.created).toLocaleDateString(isFA?'fa-IR':'en-US');
+    d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h4>${chat.title}</h4><div class="hp-delete" onclick="event.stopPropagation();deleteChat('${id}')">&#128465;</div></div><p>${preview}</p><div class="hp-date">${date}</div>`;
+    d.onclick=()=>{currentId=id;renderChat();closeHistory();switchTab('chat')};
+    list.appendChild(d);
+  });
+}
+function closeHistory(){$('historyPanel').classList.remove('active');}
+function deleteChat(id){delete history[id];saveConversations();showHistory();if(id===currentId){currentId=Date.now().toString();renderChat()}}
+function clearHistory(){if(confirm(isFA?'همه مکالمات پاک بشه؟':'Delete all conversations?')){history={};saveConversations();showHistory();currentId=Date.now().toString();renderChat()}}
+function renderChat(){messages.innerHTML='';const chat=getCurrent();chat.messages.forEach(m=>{addMsg(m.content,m.role==='user'?'user':'bot',m.image);});scrollDown();}
+
+// Search
+function toggleSearch(){$('searchBar').classList.toggle('active');if($('searchBar').classList.contains('active'))$('searchInput').focus();else $('searchInput').value='';}
+function searchChat(q){const msgs=messages.querySelectorAll('.msg');msgs.forEach(m=>{m.style.display=!q||m.textContent.toLowerCase().includes(q.toLowerCase())?'flex':'none'});}
+
+// Share
+function shareChat(){
+  const chat=getCurrent();if(!chat.messages.length){toast(isFA?'مکالمه‌ای نیست':'No messages');return;}
+  let text='💬 Hermes Chat\n━━━━━━━━━━━━\n';
+  chat.messages.forEach(m=>{text+=(m.role==='user'?'👤 شما: ':'🤖 Hermes: ')+m.content+'\n\n';});
+  if(navigator.share){navigator.share({title:'Hermes Chat',text}).catch(()=>{})}
+  else if(tg?.switchInlineQuery){navigator.clipboard?.writeText(text);toast(isFA?'کپی شد!':'Copied!')}
+  else{navigator.clipboard?.writeText(text);toast(isFA?'کپی شد!':'Copied!');}
+}
+
+// Voice
+let recognition=null,recording=false;
+function toggleVoice(){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){toast(isFA?'مرورگر پشتیبانی نمیکند':'Not supported');return;}
+  if(recording){recognition?.stop();return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition=new SR();recognition.lang=isFA?'fa-IR':'en-US';recognition.interimResults=true;recognition.continuous=false;
+  recognition.onstart=()=>{recording=true;$('voiceBtn').classList.add('recording');};
+  recognition.onend=()=>{recording=false;$('voiceBtn').classList.remove('recording');};
+  recognition.onresult=e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');input.value=t;sendBtn.disabled=false;};
+  recognition.onerror=()=>{recording=false;$('voiceBtn').classList.remove('recording');};
+  recognition.start();
+}
+
+// Chat
+$('attachBtn').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>{const f=e.target.files[0];if(!f||!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=ev=>{imageData=ev.target.result;previewEl.style.display='flex';previewEl.innerHTML=`<div class="preview-item"><img src="${imageData}"><div class="remove" onclick="removeImg()">✕</div></div>`};r.readAsDataURL(f);});
+function removeImg(){imageData=null;previewEl.style.display='none';previewEl.innerHTML='';fileInput.value='';}
+sendBtn.addEventListener('click',send);
+input.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';sendBtn.disabled=!this.value.trim()||loading});
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+function quickSend(text){switchTab('chat');input.value=text;sendBtn.disabled=false;setTimeout(send,100);}
+
+function addMsg(text,role,img){
+  const d=document.createElement('div');d.className=`msg ${role}`;
+  let c=(typeof text==='string'?text:'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if(img)c+=`<br><img src="${img}" onclick="showModal(this.src)">`;
+  d.innerHTML=`<div class="avatar-sm">${role==='bot'?'&#9764;':'&#128100;'}</div><div class="bubble">${c}</div>`;
+  messages.appendChild(d);scrollDown();return d;
+}
+function addStream(){const d=document.createElement('div');d.className='msg bot';d.innerHTML='<div class="avatar-sm">&#9764;</div><div class="bubble"></div>';messages.appendChild(d);scrollDown();return d.querySelector('.bubble');}
+function addTyping(){const d=document.createElement('div');d.className='msg bot';d.id='typing';d.innerHTML='<div class="avatar-sm">&#9764;</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';messages.appendChild(d);scrollDown();}
+function rmTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+function scrollDown(){requestAnimationFrame(()=>messages.scrollTop=messages.scrollHeight);}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+function showModal(src){const m=document.createElement('div');m.className='modal';m.innerHTML=`<img src="${src}"><button class="close" onclick="this.parentElement.remove()">✕</button>`;m.addEventListener('click',e=>{if(e.target===m)m.remove()});document.body.appendChild(m);}
+
+async function send(){
+  const text=input.value.trim();if((!text&&!imageData)||loading)return;
+  const msg={role:'user',content:[]};if(text)msg.content.push({type:'text',text});if(imageData)msg.content.push({type:'image_url',image_url:{url:imageData}});
+  if(!msg.content.length)return;if(msg.content.length===1&&msg.content[0].type==='text')msg.content=text;
+  input.value='';input.style.height='auto';sendBtn.disabled=true;loading=true;
+  const img=imageData;addMsg(text||'📷 عکس','user',img);removeImg();
+  const chat=getCurrent();
+  chat.messages.push({role:'user',content:text||'[image]',image:img,ts:Date.now()});
+  if(!chat.title||chat.title==='New chat')chat.title=(text||'Chat').substring(0,40);
+  saveConversations();addTyping();
+  const t=T[isFA?'fa':'en'];
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'Hermes',messages:[{role:'system',content:t.sys},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
+  loading=false;sendBtn.disabled=!input.value.trim();
+}
+
+if(tg?.initDataUnsafe?.user){$('greetText').textContent=(isFA?'سلام، ':'Hello, ')+tg.initDataUnsafe.user.first_name+'!';}
+applyLang();input.focus();
+</script>
+</body>
+</html>
