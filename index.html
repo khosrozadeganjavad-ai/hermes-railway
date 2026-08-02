@@ -26,7 +26,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 .greeting{text-align:center;padding:40px 24px 24px}
 .greeting .logo{width:80px;height:80px;margin:0 auto 20px}
-.greeting .logo svg{width:100%;height:100%}
+.greeting .logo svg{width:100%;height:100%;filter:drop-shadow(0 4px 20px color-mix(in srgb,var(--accent) 40%,transparent))}
+.greeting .logo{background:rgba(255,255,255,.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:12px;box-shadow:0 8px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1)}
 .greeting h1{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
 .greeting p{color:var(--text2);font-size:13px}
 
@@ -217,9 +218,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="avatar">&#9764;</div>
       <div class="info"><h1>Hermes</h1><p data-i18n="chatSub">دستیار هوش مصنوعی</p></div>
       <div class="chat-header-actions">
-        <button class="icon-btn" onclick="toggleSearch()" title="Search">&#128269;</button>
-        <button class="icon-btn" onclick="showHistory()" title="History">&#128216;</button>
-        <button class="icon-btn" onclick="shareChat()" title="Share">&#128228;</button>
+        <button class="icon-btn" onclick="toggleSearch()" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+        <button class="icon-btn" onclick="showHistory()" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg></button>
+        <button class="icon-btn" onclick="summarizeChat()" title="Summarize"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
+        <button class="icon-btn" onclick="shareChat()" title="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
       </div>
     </div>
     <div class="search-bar" id="searchBar"><input type="text" id="searchInput" placeholder="جستجو در چت..." oninput="searchChat(this.value)"></div>
@@ -266,7 +268,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="settings-section">
       <h3 data-i18n="sProfile">PROFILE</h3>
       <div class="settings-card">
-        <div class="settings-item"><div class="si-icon green">&#128100;</div><div class="si-text" data-i18n="sAbout">درباره من</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="editProfile()"><div class="si-icon green">&#128100;</div><div class="si-text" data-i18n="sAbout">پروفایل</div><div class="si-arrow">&#10095;</div></div>
       </div>
     </div>
     <div class="settings-section">
@@ -331,6 +333,50 @@ const PERSONALITIES=[
 ];
 let personalityIdx=parseInt(localStorage.getItem('hermes_personality')||'0');
 function cyclePersonality(){personalityIdx=(personalityIdx+1)%PERSONALITIES.length;localStorage.setItem('hermes_personality',personalityIdx);$('personalityVal').textContent=isFA?PERSONALITIES[personalityIdx].name:PERSONALITIES[personalityIdx].nameEn;}
+
+// Summarize
+async function summarizeChat(){
+  const chat=getCurrent();if(!chat.messages.length){toast(isFA?'مکالمه‌ای نیست':'No messages');return;}
+  const t=T[isFA?'fa':'en'];
+  const summaryPrompt=isFA?'این مکالمه رو در ۳ جمله خلاصه کن:':'Summarize this conversation in 3 sentences:';
+  const msgs=[...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content})),{role:'user',content:summaryPrompt}];
+  addTyping();
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'Hermes',messages:msgs,stream:true})});
+  rmTyping();if(!res.ok)throw new Error('API '+res.status);
+  const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();
+  while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}
+  chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();
+  }catch(e){rmTyping();addMsg(t.err+e.message,'bot');}
+}
+
+// Profile
+let userProfile=JSON.parse(localStorage.getItem('hermes_profile')||'{"name":"","bio":""}');
+function editProfile(){
+  const name=prompt(isFA?'نامت:':'Your name:',userProfile.name)||userProfile.name;
+  const bio=prompt(isFA?'درباره خودت:':'About you:',userProfile.bio)||userProfile.bio;
+  userProfile={name,bio};localStorage.setItem('hermes_profile',JSON.stringify(userProfile));
+  if(name)toast(isFA?'پروفایل ذخیره شد':'Profile saved!');
+}
+
+// Daily Notification
+function checkDailyNotification(){
+  const last=localStorage.getItem('hermes_notif_day');
+  const today=new Date().toDateString();
+  if(last!==today){
+    localStorage.setItem('hermes_notif_day',today);
+    if('Notification' in window&&Notification.permission==='granted'){
+      new Notification('Hermes 🌟',{body:isFA?'روز خوبی داشته باشی!':'Have a great day!',icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌟</text></svg>'});
+    }
+  }
+}
+if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
+setTimeout(checkDailyNotification,3000);
+
+// Calculator
+function tryCalc(text){
+  const m=text.match(/^[\d+\-*/().%\s]+$/);
+  if(m){try{const r=eval(text);return isFA?'نتیجه: '+r:'Result: '+r;}catch(e){}return null;}
+}
 
 // Conversations
 function loadConversations(){try{return JSON.parse(localStorage.getItem('hermes_chats')||'{}')}catch(e){return{}}}
@@ -430,6 +476,7 @@ function showModal(src){const m=document.createElement('div');m.className='modal
 
 async function send(){
   const text=input.value.trim();if((!text&&!imageData)||loading)return;
+  const calcResult=tryCalc(text);if(calcResult){addMsg(calcResult,'bot');return;}
   const msg={role:'user',content:[]};if(text)msg.content.push({type:'text',text});if(imageData)msg.content.push({type:'image_url',image_url:{url:imageData}});
   if(!msg.content.length)return;if(msg.content.length===1&&msg.content[0].type==='text')msg.content=text;
   input.value='';input.style.height='auto';sendBtn.disabled=true;loading=true;
@@ -441,7 +488,9 @@ async function send(){
   const t=T[isFA?'fa':'en'];
   const personality=PERSONALITIES[personalityIdx];
   const sysPrompt=t.sys+(personality?'. '+personality.prompt:'');
-  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'Hermes',messages:[{role:'system',content:sysPrompt},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
+  const profileName=userProfile.name?'. The user name is '+userProfile.name+'. Address them by name.':'.';
+  const finalSys=sysPrompt+profileName;
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'Hermes',messages:[{role:'system',content:finalSys},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
   loading=false;sendBtn.disabled=!input.value.trim();
 }
 
