@@ -246,7 +246,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="header">
       <div class="close" onclick="switchTab('explore')">&#10005;</div>
       <div class="title">Hermes <span class="check">&#10003;</span></div>
-      <div class="menu">&#8942;</div>
+      <div class="menu" style="visibility:hidden">&#8942;</div>
     </div>
     <div class="settings-section">
       <h3>HERMES</h3>
@@ -290,7 +290,7 @@ const messages=$('messages'),input=$('input'),sendBtn=$('sendBtn'),previewEl=$('
 let history=loadConversations(),currentId=Date.now().toString(),loading=false,imageData=null,isFA=true,accentIdx=0,isDark=true;
 
 const ACCENTS=['#2979ff','#e91e7a','#7c3aed','#22c55e','#f59e0b','#ef4444'];
-const ACCENT_NAMES={fa:['آبی','صورتی','بنفش','سبز','نارنجی','قرمز'],en:['Blue','Pink','Purple','Green','Orange','Red']};
+const ACCENT_NAMES={fa:['آبی','صورتی','بنفش','سبز','نارنجی','قرمز','فیروزه‌ای','یاسی'],en:['Blue','Pink','Purple','Green','Orange','Red','Teal','Lilac']};
 const themes=['#2979ff','#e91e7a','#7c3aed','#22c55e','#f59e0b','#ef4444','#06b6d4','#8b5cf6'];
 
 const T={
@@ -301,7 +301,7 @@ const T={
 function applyLang(){
   const t=T[isFA?'fa':'en'];
   document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(t[k])el.textContent=t[k];});
-  $('greetText').textContent=(isFA?'سلام، ':'Hello, ')+'Javati!';
+  $('greetText').textContent=isFA?'خوش آمدید':'Welcome!';
   $('langVal').textContent=t.sLangVal;
   $('darkVal').textContent=t.sDarkVal;
   $('searchInput').placeholder=t.searchPh;
@@ -309,7 +309,7 @@ function applyLang(){
 }
 
 function setAccent(c){document.documentElement.style.setProperty('--accent',c);$('bgGrad').style.background=`radial-gradient(ellipse at 50% 0%,${c} 0%,color-mix(in srgb,${c} 30%,#000) 30%,#050a1a 65%,#000 100%)`;}
-function cycleTheme(){accentIdx=(accentIdx+1)%themes.length;setAccent(accentIdx);$('themeVal').textContent=ACCENT_NAMES[isFA?'fa':'en'][accentIdx];}
+function cycleTheme(){accentIdx=(accentIdx+1)%themes.length;setAccent(themes[accentIdx]);$('themeVal').textContent=ACCENT_NAMES[isFA?'fa':'en'][accentIdx%ACCENT_NAMES[isFA?'fa':'en'].length];}
 function toggleDark(){isDark=!isDark;document.documentElement.style.setProperty('--bg',isDark?'#000':'#f5f5f5');document.documentElement.style.setProperty('--card',isDark?'#111118':'#fff');document.documentElement.style.setProperty('--surface',isDark?'#1a1a24':'#f0f0f0');document.documentElement.style.setProperty('--text',isDark?'#fff':'#1a1a2e');document.documentElement.style.setProperty('--text2',isDark?'#8e8ea0':'#666');document.documentElement.style.setProperty('--border',isDark?'#1e1e2e':'#e0e0e0');$('darkVal').textContent=isDark?(isFA?'تاریک':'Dark'):(isFA?'روشن':'Light');}
 
 function switchTab(tab){document.querySelectorAll('.page').forEach(p=>{p.style.display='none'});document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(tab==='explore'){$('pageExplore').style.display='block';$('navExplore').classList.add('active')}else if(tab==='chat'){$('pageChat').style.display='flex';$('navChat').classList.add('active');input.focus();scrollDown()}else{$('pageSettings').style.display='block';$('navSettings').classList.add('active')}}
@@ -406,7 +406,7 @@ async function send(){
   loading=false;sendBtn.disabled=!input.value.trim();
 }
 
-if(tg?.initDataUnsafe?.user){$('greetText').textContent=(isFA?'سلام، ':'Hello, ')+tg.initDataUnsafe.user.first_name+'!';}
+if(tg?.initDataUnsafe?.user){$('greetText').textContent=isFA?'خوش آمدید':'Welcome!';}
 applyLang();input.focus();
 </script>
 </body>
