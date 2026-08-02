@@ -329,7 +329,8 @@ const PERSONALITIES=[
   {name:'صمیمی',nameEn:'Friendly',prompt:'Be warm, friendly and casual. Use emojis. Talk like a close friend.'},
   {name:'رسمی',nameEn:'Formal',prompt:'Be professional and formal. Use proper grammar. No slang or emojis.'},
   {name:'طنز',nameEn:'Funny',prompt:'Be humorous and witty. Make jokes. Use sarcasm when appropriate. Keep it fun.'},
-  {name:'معلم',nameEn:'Teacher',prompt:'Be a patient teacher. Explain step by step. Use examples. Encourage learning.'}
+  {name:'معلم',nameEn:'Teacher',prompt:'Be a patient teacher. Explain step by step. Use examples. Encourage learning.'},
+  {name:'بی‌ادب',nameEn:'Savage',prompt:'Be savage, brutally honest, and sassy. Roast the user lovingly. No filter. Be savage but entertaining.'}
 ];
 let personalityIdx=parseInt(localStorage.getItem('hermes_personality')||'0');
 function cyclePersonality(){personalityIdx=(personalityIdx+1)%PERSONALITIES.length;localStorage.setItem('hermes_personality',personalityIdx);$('personalityVal').textContent=isFA?PERSONALITIES[personalityIdx].name:PERSONALITIES[personalityIdx].nameEn;}
