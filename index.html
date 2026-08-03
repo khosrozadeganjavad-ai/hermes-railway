@@ -298,6 +298,8 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
         <button class="icon-btn" onclick="summarizeChat()" title="Summarize"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
         <button class="icon-btn" onclick="shareChat()" title="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
         <button class="icon-btn" onclick="exportChat()" title="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+        <button class="icon-btn" onclick="shareConversation()" title="Share Link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+        <button class="icon-btn" onclick="backupToClipboard()" title="Backup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
       </div>
     </div>
     <div class="search-bar" id="searchBar"><input type="text" id="searchInput" placeholder="جستجو در چت..." oninput="searchChat(this.value)"></div>
@@ -340,6 +342,10 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
         <div class="settings-item" onclick="toggleDark()"><div class="si-icon pink">&#127769;</div><div class="si-text" data-i18n="sDark">حالت نمایش</div><div class="si-value" id="darkVal" data-i18n="sDarkVal">تاریک</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="openPersonalityPicker()"><div class="si-icon green">&#127917;</div><div class="si-text">شخصیت AI</div><div class="si-value" id="personalityVal">صمیمی</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="openWallpaperPicker()"><div class="si-icon blue">&#127748;</div><div class="si-text">پس‌زمینه چت</div><div class="si-value" id="wallpaperVal">پیش‌فرض</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="openModelPicker()"><div class="si-icon orange">&#129302;</div><div class="si-text">مدل AI</div><div class="si-value" id="modelVal">Hermes</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="cycleFontSize()"><div class="si-icon pink">&#128207;</div><div class="si-text">اندازه متن</div><div class="si-value">14px</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="toggleAutoTranslate()"><div class="si-icon green">&#127760;</div><div class="si-text">ترجمه خودکار</div><div class="si-value" id="translateVal">غیرفعال</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="showStats()"><div class="si-icon purple">&#128200;</div><div class="si-text">آمار استفاده</div><div class="si-arrow">&#10095;</div></div>
       </div>
     </div>
     <div class="settings-section">
@@ -431,7 +437,7 @@ async function summarizeChat(){
   const summaryPrompt=isFA?'این مکالمه رو در ۳ جمله خلاصه کن:':'Summarize this conversation in 3 sentences:';
   const msgs=[...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content})),{role:'user',content:summaryPrompt}];
   addTyping();
-  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'Hermes',messages:msgs,stream:true})});
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:msgs,stream:true})});
   rmTyping();if(!res.ok)throw new Error('API '+res.status);
   const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();
   while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}
@@ -653,6 +659,122 @@ async function sendVoiceMessage(text){
 }
 
 
+// Q4 Features
+
+// 1. Multi-Model Selector
+const MODELS=[
+  {name:"Hermes",nameEn:"Hermes",id:"Hermes"},
+  {name:"GPT-4o",nameEn:"GPT-4o",id:"gpt-4o"},
+  {name:"Claude",nameEn:"Claude",id:"claude-3-5-sonnet"},
+  {name:"Gemini",nameEn:"Gemini",id:"gemini-pro"}
+];
+let modelIdx=parseInt(localStorage.getItem("hermes_model")||"0");
+function openModelPicker(){
+  showPicker(isFA?"مدل هوش مصنوعی":"AI Model",MODELS,modelIdx,i=>{
+    modelIdx=i;localStorage.setItem("hermes_model",i);
+    toast(isFA?"مدل: ":"Model: "+MODELS[i].name);
+  });
+}
+function getModelId(){return MODELS[modelIdx]?.id||"Hermes";}
+
+// 2. Auto Translate
+let autoTranslate=localStorage.getItem("hermes_autotranslate")==="true";
+function toggleAutoTranslate(){
+  autoTranslate=!autoTranslate;
+  localStorage.setItem("hermes_autotranslate",autoTranslate);
+  toast(isFA?(autoTranslate?"ترجمه خودکار فعال":"ترجمه خودکار غیرفعال"):(autoTranslate?"Auto-translate ON":"Auto-translate OFF"));
+}
+
+// 3. Share Conversation
+function shareConversation(){
+  const chat=getCurrent();if(!chat.messages.length){toast(isFA?"مکالمه‌ای نیست":"No messages");return;}
+  try{
+    const data=btoa(unescape(encodeURIComponent(JSON.stringify(chat.messages))));
+    const link=window.location.origin+"#chat="+data.substring(0,500);
+    navigator.clipboard.writeText(link).then(()=>toast(isFA?"لینک کپی شد!":"Link copied!"));
+  }catch(e){toast(isFA?"خطا":"Error");}
+}
+
+// 4. Backup to Clipboard
+function backupToClipboard(){
+  let text="=== Hermes Backup ===\n"+new Date().toLocaleDateString()+"\n\n";
+  Object.entries(chatHistory).forEach(([id,chat])=>{
+    text+="--- "+chat.title+" ---\n";
+    chat.messages.forEach(m=>{text+=(m.role==="user"?(isFA?"شما":"You"):"Hermes")+": "+m.content+"\n";});
+    text+="\n";
+  });
+  navigator.clipboard.writeText(text).then(()=>toast(isFA?"بکاپ کپی شد!":"Backup copied!"));
+}
+
+
+// Q3 Features
+
+// 1. Message Timestamps
+function addMsgTimestamp(d,ts){
+  if(!ts)return;
+  const t=new Date(ts);
+  const time=t.toLocaleTimeString(isFA?"fa-IR":"en-US",{hour:"2-digit",minute:"2-digit"});
+  const el=document.createElement("div");el.className="msg-time";el.textContent=time;
+  el.style.cssText="font-size:10px;color:var(--text3);margin-top:2px;padding-left:42px";
+  d.appendChild(el);
+}
+
+// 2. Delete Message
+function addDeleteBtn(d,role){
+  const btn=document.createElement("button");btn.className="msg-del";btn.innerHTML="&#128465;";
+  btn.style.cssText="position:absolute;top:4px;right:4px;background:rgba(239,68,68,.1);border:none;border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;opacity:0;transition:opacity .2s;color:var(--red)";
+  btn.onmouseover=()=>btn.style.opacity="1";btn.onmouseout=()=>btn.style.opacity="0";
+  d.onmouseover=()=>btn.style.opacity="1";d.onmouseout=()=>btn.style.opacity="0";
+  btn.onclick=e=>{e.stopPropagation();d.style.animation="fadeOut .3s ease";setTimeout(()=>d.remove(),300);};
+  d.appendChild(btn);
+}
+d.addEventListener("mouseover",()=>d.querySelector(".msg-del")&&(d.querySelector(".msg-del").style.opacity="1"));
+d.addEventListener("mouseout",()=>d.querySelector(".msg-del")&&(d.querySelector(".msg-del").style.opacity="0"));
+
+// 3. Font Size
+let fontSize=parseInt(localStorage.getItem("hermes_font")||"14");
+function cycleFontSize(){
+  const sizes=[12,14,16,18];
+  const names=isFA?["کوچک","متوسط","بزرگ","خیلی بزرگ"]:["Small","Medium","Large","X-Large"];
+  const idx=sizes.indexOf(fontSize);const next=(idx+1)%sizes.length;
+  fontSize=sizes[next];localStorage.setItem("hermes_font",fontSize);
+  document.querySelectorAll(".bubble").forEach(b=>b.style.fontSize=fontSize+"px");
+  toast(names[next]);
+}
+
+// 4. Usage Stats
+function showStats(){
+  const totalMsgs=Object.values(chatHistory).reduce((s,c)=>s+c.messages.length,0);
+  const totalChats=Object.keys(chatHistory).length;
+  const totalChars=Object.values(chatHistory).reduce((s,c)=>s+c.messages.reduce((a,m)=>a+(m.content||"").length,0),0);
+  const topPersonality=PERSONALITIES[personalityIdx]?.name||"-";
+  const html=`<div style="padding:20px">
+    <h3 style="margin-bottom:16px">${isFA?"آمار استفاده":"Usage Stats"}</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:var(--surface);padding:16px;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--accent)">${totalMsgs}</div><div style="font-size:12px;color:var(--text2)">${isFA?"پیام":"Messages"}</div></div>
+      <div style="background:var(--surface);padding:16px;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--green)">${totalChats}</div><div style="font-size:12px;color:var(--text2)">${isFA?"مکالمه":"Chats"}</div></div>
+      <div style="background:var(--surface);padding:16px;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--orange)">${(totalChars/1000).toFixed(1)}k</div><div style="font-size:12px;color:var(--text2)">${isFA?"کاراکتر":"Characters"}</div></div>
+      <div style="background:var(--surface);padding:16px;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:700;color:var(--purple)">${topPersonality}</div><div style="font-size:12px;color:var(--text2)">${isFA?"شخصیت":"Personality"}</div></div>
+    </div>
+  </div>`;
+  const m=document.createElement("div");m.className="modal";m.innerHTML=html+`<button class="close" onclick="this.parentElement.remove()">&#10005;</button>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+
+// 5. Chat Theme
+let chatThemes=JSON.parse(localStorage.getItem("hermes_chat_themes")||"{}");
+function cycleChatTheme(){
+  const colors=["#2979ff","#e91e7a","#7c3aed","#22c55e","#f59e0b","#ef4444","#06b6d4","#8b5cf6",""];
+  const names=isFA?["آبی","صورتی","بنفش","سبز","نارنجی","قرمز","فیروزه‌ای","یاسی","پیش‌فرض"]:["Blue","Pink","Purple","Green","Orange","Red","Teal","Lilac","Default"];
+  const current=chatThemes[currentId]||"";
+  const idx=colors.indexOf(current);const next=(idx+1)%colors.length;
+  chatThemes[currentId]=colors[next];localStorage.setItem("hermes_chat_themes",JSON.stringify(chatThemes));
+  if(colors[next])document.documentElement.style.setProperty("--accent",colors[next]);
+  else document.documentElement.style.setProperty("--accent",localStorage.getItem("hermes_accent")||"#2979ff");
+  toast(names[next]);
+}
+
+
 // Easter Eggs
 const EGGS={
   ping:"pong 🏓",
@@ -773,7 +895,7 @@ async function send(){
   const sysPrompt=t.sys+(personality?'. '+personality.prompt:'');
   const profileName=userProfile.name?'. The user name is '+userProfile.name+'. Address them by name.':'.';
   const finalSys=sysPrompt+profileName;
-  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'Hermes',messages:[{role:'system',content:finalSys},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:[{role:'system',content:finalSys},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
 playReceiveSound();}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
   loading=false;sendBtn.disabled=!input.value.trim();
 }
