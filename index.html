@@ -623,7 +623,7 @@ function startVoiceListening(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   recognition=new SR();recognition.lang=isFA?"fa-IR":"en-US";recognition.interimResults=true;recognition.continuous=false;
   recognition.onstart=()=>{voiceListening=true;$("voiceAvatar").className="voice-avatar listening";$("voiceStatus").textContent="گوش میدم...";$("voiceSub").textContent="حرف بزنید";animateVoiceWaves(true);};
-  recognition.onend=()=>{voiceListening=false;animateVoiceWaves(false);if(voiceModeActive&&!voiceContinuous){setTimeout(()=>{if(voiceModeActive)startVoiceListening();},500);}};
+  recognition.onend=()=>{voiceListening=false;animateVoiceWaves(false);if(voiceModeActive){$('voiceAvatar').className='voice-avatar';$('voiceStatus').textContent=isFA?'برای شنیدن کلیک کنید':'Tap to listen';}}
   recognition.onresult=e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join("");$("voiceSub").textContent=t;if(e.results[0].isFinal){voiceContinuous=true;sendVoiceMessage(t);}};
   recognition.onerror=()=>{voiceListening=false;$("voiceAvatar").className="voice-avatar";$("voiceStatus").textContent="خطا - دوباره تلاش کنید";animateVoiceWaves(false);};
   recognition.start();
