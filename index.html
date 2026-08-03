@@ -663,16 +663,18 @@ async function sendVoiceMessage(text){
 
 // 1. Multi-Model Selector
 const MODELS=[
-  {name:"Hermes",nameEn:"Hermes",id:"Hermes"},
-  {name:"GPT-4o",nameEn:"GPT-4o",id:"gpt-4o"},
-  {name:"Claude",nameEn:"Claude",id:"claude-3-5-sonnet"},
-  {name:"Gemini",nameEn:"Gemini",id:"gemini-pro"}
+  {name:"Hermes",nameEn:"Hermes",id:"Hermes",icon:"🌟",color:"linear-gradient(135deg,#2979ff,#1d4ed8)"},
+  {name:"GPT-4o",nameEn:"GPT-4o",id:"Hermes",icon:"🤖",color:"linear-gradient(135deg,#22c55e,#16a34a)",soon:true},
+  {name:"Claude",nameEn:"Claude",id:"Hermes",icon:"🧠",color:"linear-gradient(135deg,#f59e0b,#d97706)",soon:true},
+  {name:"Gemini",nameEn:"Gemini",id:"Hermes",icon:"💎",color:"linear-gradient(135deg,#8b5cf6,#7c3aed)",soon:true}
 ];
 let modelIdx=parseInt(localStorage.getItem("hermes_model")||"0");
 function openModelPicker(){
-  showPicker(isFA?"مدل هوش مصنوعی":"AI Model",MODELS,modelIdx,i=>{
+  const items=MODELS.map((m,i)=>({...m,name:m.name+(m.soon?(isFA?" (بزودی)":" (soon)"):"")}));
+  showPicker(isFA?"مدل هوش مصنوعی":"AI Model",items,modelIdx,i=>{
+    if(MODELS[i].soon){toast(isFA?"بزودی اضافه میشه!":"Coming soon!");return;}
     modelIdx=i;localStorage.setItem("hermes_model",i);
-    document.getElementById("modelVal").textContent=MODELS[i].name;toast(isFA?"مدل: ":"Model: "+MODELS[i].name);
+    document.getElementById("modelVal").textContent=MODELS[i].name;
   });
 }
 function getModelId(){return MODELS[modelIdx]?.id||"Hermes";}
