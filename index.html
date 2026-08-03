@@ -42,6 +42,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .greeting .logo{width:80px;height:80px;margin:0 auto 20px;background:rgba(255,255,255,.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:12px;box-shadow:0 8px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1)}
 .greeting .logo svg{width:100%;height:100%;filter:drop-shadow(0 4px 20px color-mix(in srgb,var(--accent) 40%,transparent));animation:logoPulse 3s ease-in-out infinite}
 @keyframes logoPulse{0%,100%{filter:drop-shadow(0 4px 20px color-mix(in srgb,var(--accent) 30%,transparent))}50%{filter:drop-shadow(0 4px 30px color-mix(in srgb,var(--accent) 60%,transparent))}}
+.messages.wp-1{background:radial-gradient(1px 1px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 40px 70px,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 50px 160px,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 90px 40px,#fff,transparent),radial-gradient(1px 1px at 130px 80px,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 160px 120px,#fff,transparent),var(--bg)!important}
+.messages.wp-2{background:radial-gradient(circle at 30% 20%,rgba(41,121,255,.06),transparent 50%),radial-gradient(circle at 70% 80%,rgba(233,30,122,.05),transparent 50%),radial-gradient(circle at 50% 50%,rgba(124,58,237,.04),transparent 60%),var(--bg)!important}
+.messages.wp-3{background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px)!important;background-size:30px 30px;background-color:var(--bg)!important}
+.messages.wp-4{background:radial-gradient(ellipse at 20% 50%,rgba(124,58,237,.12),transparent 50%),radial-gradient(ellipse at 80% 50%,rgba(233,30,122,.1),transparent 50%),radial-gradient(ellipse at 50% 20%,rgba(41,121,255,.08),transparent 60%),var(--bg)!important}
+.messages.wp-5{background:linear-gradient(180deg,rgba(255,107,53,.06) 0%,rgba(233,30,122,.04) 50%,transparent 100%),var(--bg)!important}
 .greeting h1{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
 .greeting p{color:var(--text2);font-size:13px}
 
@@ -598,12 +603,12 @@ checkAutoTheme();
 // Offline Cache
 // Chat Wallpapers
 const WALLPAPERS=[
-  {name:'پیش‌فرض',nameEn:'Default',css:''},
-  {name:'ستاره‌ای',nameEn:'Starry',css:'background:radial-gradient(1px 1px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 40px 70px,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 50px 160px,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 90px 40px,#fff,transparent),radial-gradient(1px 1px at 130px 80px,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 160px 120px,#fff,transparent);background-color:var(--bg)'},
-  {name:'حلقه‌ای',nameEn:'Circles',css:'background:radial-gradient(circle at 30% 20%,rgba(41,121,255,.06),transparent 50%),radial-gradient(circle at 70% 80%,rgba(233,30,122,.05),transparent 50%),radial-gradient(circle at 50% 50%,rgba(124,58,237,.04),transparent 60%)'},
-  {name:'شبکه‌ای',nameEn:'Grid',css:'background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:30px 30px'},
-  {name:'سحابی',nameEn:'Nebula',css:'background:radial-gradient(ellipse at 20% 50%,rgba(124,58,237,.12),transparent 50%),radial-gradient(ellipse at 80% 50%,rgba(233,30,122,.1),transparent 50%),radial-gradient(ellipse at 50% 20%,rgba(41,121,255,.08),transparent 60%)'},
-  {name:'غروب',nameEn:'Sunset',css:'background:linear-gradient(180deg,rgba(255,107,53,.06) 0%,rgba(233,30,122,.04) 50%,transparent 100%)'}
+  {name:'پیش‌فرض',nameEn:'Default'},
+  {name:'ستاره‌ای',nameEn:'Starry'},
+  {name:'حلقه‌ای',nameEn:'Circles'},
+  {name:'شبکه‌ای',nameEn:'Grid'},
+  {name:'سحابی',nameEn:'Nebula'},
+  {name:'غروب',nameEn:'Sunset'}
 ];
 let wpIdx=parseInt(localStorage.getItem('hermes_wallpaper')||'0');
 function cycleWallpaper(){
@@ -613,7 +618,10 @@ function cycleWallpaper(){
 }
 function applyWallpaper(){
   const wp=WALLPAPERS[wpIdx];
-  document.querySelectorAll('.messages').forEach(m=>{m.style.cssText=wp.css||'';m.style.padding='20px 16px';m.style.display='flex';m.style.flexDirection='column';m.style.gap='14px';m.style.flex='1';m.style.overflowY='auto';});
+  document.querySelectorAll('.messages').forEach(m=>{
+    m.className='messages';
+    if(wpIdx>0)m.classList.add('wp-'+wpIdx);
+  });
   $('wallpaperVal').textContent=isFA?WALLPAPERS[wpIdx].name:WALLPAPERS[wpIdx].nameEn;
 }
 
