@@ -437,7 +437,7 @@ async function summarizeChat(){
   const summaryPrompt=isFA?'این مکالمه رو در ۳ جمله خلاصه کن:':'Summarize this conversation in 3 sentences:';
   const msgs=[...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content})),{role:'user',content:summaryPrompt}];
   addTyping();
-  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},body:JSON.stringify({model:getModelId(),messages:msgs,stream:true})});
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:msgs,stream:true})});
   rmTyping();if(!res.ok)throw new Error('API '+res.status);
   const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();
   while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}
@@ -897,7 +897,7 @@ async function send(){
   const sysPrompt=t.sys+(personality?'. '+personality.prompt:'');
   const profileName=userProfile.name?'. The user name is '+userProfile.name+'. Address them by name.':'.';
   const finalSys=sysPrompt+profileName;
-  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},body:JSON.stringify({model:getModelId(),messages:[{role:'system',content:finalSys},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:[{role:'system',content:finalSys},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
 playReceiveSound();}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
   loading=false;sendBtn.disabled=!input.value.trim();
 }
