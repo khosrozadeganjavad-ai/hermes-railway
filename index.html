@@ -98,6 +98,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .react-btn:active{transform:scale(1.3)}
 .react-btn.active{background:rgba(41,121,255,.15);border-color:var(--accent);transform:scale(1.15)}
 .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;margin:8px 0;overflow-x:auto;font-size:12px;line-height:1.5;font-family:'Fira Code',monospace;color:#e6edf3}
+.code-block{position:relative}
+.copy-btn{position:absolute;top:6px;right:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 8px;color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;backdrop-filter:blur(8px)}
+.copy-btn:hover{background:rgba(41,121,255,.2);color:var(--accent);border-color:var(--accent)}
+.copy-btn.copied{background:rgba(34,197,94,.2);color:var(--green);border-color:var(--green)}
 .inline-code{background:rgba(41,121,255,.15);border:1px solid rgba(41,121,255,.2);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'Fira Code',monospace;color:var(--accent)}
 blockquote{border-right:3px solid var(--accent);padding:4px 12px;margin:8px 0;color:var(--text2);font-style:italic}
 h2,h3,h4{margin:8px 0 4px;color:var(--text)}
@@ -285,6 +289,7 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
         <div class="settings-item" onclick="cycleTheme()"><div class="si-icon purple">&#127912;</div><div class="si-text" data-i18n="sTheme">تم رنگی</div><div class="si-value" id="themeVal">آبی</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="toggleDark()"><div class="si-icon pink">&#127769;</div><div class="si-text" data-i18n="sDark">حالت نمایش</div><div class="si-value" id="darkVal" data-i18n="sDarkVal">تاریک</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="cyclePersonality()"><div class="si-icon green">&#127917;</div><div class="si-text">شخصیت AI</div><div class="si-value" id="personalityVal">صمیمی</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="cycleWallpaper()"><div class="si-icon blue">&#127748;</div><div class="si-text">پس‌زمینه چت</div><div class="si-value" id="wallpaperVal">پیش‌فرض</div><div class="si-arrow">&#10095;</div></div>
       </div>
     </div>
     <div class="settings-section">
@@ -457,7 +462,7 @@ function toggleVoice(){
 function parseMd(t){
   if(!t)return'';
   t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  t=t.replace(/```([\s\S]*?)```/g,'<pre class="code-block"><code>$1</code></pre>');
+  t=t.replace(/```([\s\S]*?)```/g,(m,code)=>`<pre class="code-block"><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>${code}</code></pre>`);
   t=t.replace(/`([^`]+)`/g,'<code class="inline-code">$1</code>');
   t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
   t=t.replace(/\*(.+?)\*/g,'<em>$1</em>');
@@ -497,6 +502,16 @@ function playReceiveSound(){
   o.frequency.setValueAtTime(659,audioCtx.currentTime);o.frequency.setValueAtTime(784,audioCtx.currentTime+0.08);
   o.type='sine';g.gain.value=0.06;g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.2);
   o.start();o.stop(audioCtx.currentTime+0.2);}catch(e){}
+}
+
+// Copy Code
+function copyCode(btn){
+  const code=btn.parentElement.querySelector('code');
+  if(!code)return;
+  navigator.clipboard.writeText(code.textContent).then(()=>{
+    btn.textContent=isFA?'کپی شد!':'Copied!';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied');},2000);
+  }).catch(()=>{});
 }
 
 // TTS (Text to Speech)
@@ -575,17 +590,39 @@ setTimeout(()=>{$('splash').classList.add('hide');},1500);
 // Auto Dark/Light Mode
 function checkAutoTheme(){
   const h=new Date().getHours();
-  if(h>=7&&h<19){isDark=false;}else{isDark=true;}
-  toggleDark();toggleDark();
+  const shouldBeDark=h<7||h>=19;
+  if(isDark!==shouldBeDark)toggleDark();
 }
-// checkAutoTheme(); // uncomment to enable auto theme
+checkAutoTheme();
+
+// Offline Cache
+// Chat Wallpapers
+const WALLPAPERS=[
+  {name:'پیش‌فرض',nameEn:'Default',css:''},
+  {name:'ستاره‌ای',nameEn:'Starry',css:'background:radial-gradient(1px 1px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 40px 70px,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 50px 160px,rgba(255,255,255,.3),transparent),radial-gradient(1px 1px at 90px 40px,#fff,transparent),radial-gradient(1px 1px at 130px 80px,rgba(255,255,255,.4),transparent),radial-gradient(1px 1px at 160px 120px,#fff,transparent);background-color:var(--bg)'},
+  {name:'حلقه‌ای',nameEn:'Circles',css:'background:radial-gradient(circle at 30% 20%,rgba(41,121,255,.06),transparent 50%),radial-gradient(circle at 70% 80%,rgba(233,30,122,.05),transparent 50%),radial-gradient(circle at 50% 50%,rgba(124,58,237,.04),transparent 60%)'},
+  {name:'شبکه‌ای',nameEn:'Grid',css:'background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:30px 30px'},
+  {name:'سحابی',nameEn:'Nebula',css:'background:radial-gradient(ellipse at 20% 50%,rgba(124,58,237,.12),transparent 50%),radial-gradient(ellipse at 80% 50%,rgba(233,30,122,.1),transparent 50%),radial-gradient(ellipse at 50% 20%,rgba(41,121,255,.08),transparent 60%)'},
+  {name:'غروب',nameEn:'Sunset',css:'background:linear-gradient(180deg,rgba(255,107,53,.06) 0%,rgba(233,30,122,.04) 50%,transparent 100%)'}
+];
+let wpIdx=parseInt(localStorage.getItem('hermes_wallpaper')||'0');
+function cycleWallpaper(){
+  wpIdx=(wpIdx+1)%WALLPAPERS.length;localStorage.setItem('hermes_wallpaper',wpIdx);
+  $('wallpaperVal').textContent=isFA?WALLPAPERS[wpIdx].name:WALLPAPERS[wpIdx].nameEn;
+  applyWallpaper();
+}
+function applyWallpaper(){
+  const wp=WALLPAPERS[wpIdx];
+  document.querySelectorAll('.messages').forEach(m=>{m.style.cssText=wp.css||'';m.style.padding='20px 16px';m.style.display='flex';m.style.flexDirection='column';m.style.gap='14px';m.style.flex='1';m.style.overflowY='auto';});
+  $('wallpaperVal').textContent=isFA?WALLPAPERS[wpIdx].name:WALLPAPERS[wpIdx].nameEn;
+}
 
 // Offline Cache
 function cacheConversations(){try{localStorage.setItem('hermes_cache',JSON.stringify(history));}catch(e){}}
 function loadCache(){try{const c=localStorage.getItem('hermes_cache');if(c)history=JSON.parse(c);}catch(e){}}
 loadCache();
 
-applyLang();input.focus();
+applyLang();applyWallpaper();input.focus();
 </script>
 </body>
 </html>
