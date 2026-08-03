@@ -103,6 +103,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .copy-btn{position:absolute;top:6px;right:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 8px;color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;backdrop-filter:blur(8px)}
 .copy-btn:hover{background:rgba(41,121,255,.2);color:var(--accent);border-color:var(--accent)}
 .copy-btn.copied{background:rgba(34,197,94,.2);color:var(--green);border-color:var(--green)}
+.copy-btn.copied{background:rgba(34,197,94,.2);color:var(--green);border-color:var(--green)}
+.picker-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s ease}
+.picker-sheet{width:100%;max-width:480px;max-height:70vh;background:var(--card);border-radius:20px 20px 0 0;padding:20px;overflow-y:auto;animation:slideUp .3s ease}
+.picker-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.picker-header h3{font-size:16px;font-weight:700}
+.picker-close{width:32px;height:32px;border-radius:50%;background:var(--surface);border:none;color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.picker-item{padding:16px 8px;border-radius:14px;background:var(--surface);border:2px solid transparent;cursor:pointer;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:8px}
+.picker-item:active{transform:scale(.95)}
+.picker-item.active{border-color:var(--accent);background:rgba(41,121,255,.1)}
+.picker-item .pi-icon{font-size:24px;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.picker-item .pi-name{font-size:12px;font-weight:600;color:var(--text)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .inline-code{background:rgba(41,121,255,.15);border:1px solid rgba(41,121,255,.2);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'Fira Code',monospace;color:var(--accent)}
 blockquote{border-right:3px solid var(--accent);padding:4px 12px;margin:8px 0;color:var(--text2);font-style:italic}
 h2,h3,h4{margin:8px 0 4px;color:var(--text)}
@@ -289,8 +302,8 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
         <div class="settings-item" onclick="toggleLang()"><div class="si-icon blue">&#127760;</div><div class="si-text" data-i18n="sLang">زبان / Language</div><div class="si-value" id="langVal" data-i18n="sLangVal">فارسی</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="cycleTheme()"><div class="si-icon purple">&#127912;</div><div class="si-text" data-i18n="sTheme">تم رنگی</div><div class="si-value" id="themeVal">آبی</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="toggleDark()"><div class="si-icon pink">&#127769;</div><div class="si-text" data-i18n="sDark">حالت نمایش</div><div class="si-value" id="darkVal" data-i18n="sDarkVal">تاریک</div><div class="si-arrow">&#10095;</div></div>
-        <div class="settings-item" onclick="cyclePersonality()"><div class="si-icon green">&#127917;</div><div class="si-text">شخصیت AI</div><div class="si-value" id="personalityVal">صمیمی</div><div class="si-arrow">&#10095;</div></div>
-        <div class="settings-item" onclick="cycleWallpaper()"><div class="si-icon blue">&#127748;</div><div class="si-text">پس‌زمینه چت</div><div class="si-value" id="wallpaperVal">پیش‌فرض</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="openPersonalityPicker()"><div class="si-icon green">&#127917;</div><div class="si-text">شخصیت AI</div><div class="si-value" id="personalityVal">صمیمی</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="openWallpaperPicker()"><div class="si-icon blue">&#127748;</div><div class="si-text">پس‌زمینه چت</div><div class="si-value" id="wallpaperVal">پیش‌فرض</div><div class="si-arrow">&#10095;</div></div>
       </div>
     </div>
     <div class="settings-section">
@@ -353,14 +366,27 @@ function toggleLang(){isFA=!isFA;applyLang();}
 
 // Personality
 const PERSONALITIES=[
-  {name:'صمیمی',nameEn:'Friendly',prompt:'Be warm, friendly and casual. Use emojis. Talk like a close friend.'},
-  {name:'رسمی',nameEn:'Formal',prompt:'Be professional and formal. Use proper grammar. No slang or emojis.'},
-  {name:'طنز',nameEn:'Funny',prompt:'Be humorous and witty. Make jokes. Use sarcasm when appropriate. Keep it fun.'},
-  {name:'معلم',nameEn:'Teacher',prompt:'Be a patient teacher. Explain step by step. Use examples. Encourage learning.'},
-  {name:'بی‌ادب',nameEn:'Savage',prompt:'Be savage, brutally honest, and sassy. Roast the user lovingly. No filter. Be savage but entertaining.'}
+  {name:'صمیمی',nameEn:'Friendly',prompt:'Be warm, friendly and casual. Use emojis. Talk like a close friend.',icon:'😊',color:'linear-gradient(135deg,#22c55e,#16a34a)'},
+  {name:'رسمی',nameEn:'Formal',prompt:'Be professional and formal. Use proper grammar. No slang or emojis.',icon:'🎩',color:'linear-gradient(135deg,#3b82f6,#1d4ed8)'},
+  {name:'طنز',nameEn:'Funny',prompt:'Be humorous and witty. Make jokes. Use sarcasm when appropriate. Keep it fun.',icon:'😄',color:'linear-gradient(135deg,#f59e0b,#d97706)'},
+  {name:'معلم',nameEn:'Teacher',prompt:'Be a patient teacher. Explain step by step. Use examples. Encourage learning.',icon:'📚',color:'linear-gradient(135deg,#8b5cf6,#7c3aed)'},
+  {name:'بی‌ادب',nameEn:'Savage',prompt:'Be savage, brutally honest, and sassy. Roast the user lovingly. No filter.',icon:'🖤',color:'linear-gradient(135deg,#ef4444,#dc2626)'}
 ];
 let personalityIdx=parseInt(localStorage.getItem('hermes_personality')||'0');
 function cyclePersonality(){personalityIdx=(personalityIdx+1)%PERSONALITIES.length;localStorage.setItem('hermes_personality',personalityIdx);$('personalityVal').textContent=isFA?PERSONALITIES[personalityIdx].name:PERSONALITIES[personalityIdx].nameEn;}
+function openPersonalityPicker(){
+  showPicker(isFA?'شخصیت AI':'AI Personality',PERSONALITIES,personalityIdx,i=>{
+    personalityIdx=i;localStorage.setItem('hermes_personality',i);
+    $('personalityVal').textContent=isFA?PERSONALITIES[i].name:PERSONALITIES[i].nameEn;
+  });
+}
+function openWallpaperPicker(){
+  showPicker(isFA?'پس‌زمینه چت':'Chat Wallpaper',WALLPAPERS,wpIdx,i=>{
+    wpIdx=i;localStorage.setItem('hermes_wallpaper',i);
+    $('wallpaperVal').textContent=isFA?WALLPAPERS[i].name:WALLPAPERS[i].nameEn;
+    applyWallpaper();
+  });
+}
 
 // Summarize
 async function summarizeChat(){
@@ -505,6 +531,23 @@ function playReceiveSound(){
   o.start();o.stop(audioCtx.currentTime+0.2);}catch(e){}
 }
 
+// Generic Picker
+function showPicker(title,items,currentIdx,onSelect){
+  const overlay=document.createElement('div');overlay.className='picker-overlay';
+  const sheet=document.createElement('div');sheet.className='picker-sheet';
+  sheet.innerHTML=`<div class="picker-header"><h3>${title}</h3><button class="picker-close">&#10005;</button></div><div class="picker-grid"></div>`;
+  const grid=sheet.querySelector('.picker-grid');
+  items.forEach((item,i)=>{
+    const el=document.createElement('div');el.className='picker-item'+(i===currentIdx?' active':'');
+    el.innerHTML=`<div class="pi-icon" style="background:${item.color||'var(--surface)'}">${item.icon}</div><div class="pi-name">${isFA?item.name:item.nameEn}</div>`;
+    el.onclick=()=>{onSelect(i);overlay.remove();};
+    grid.appendChild(el);
+  });
+  sheet.querySelector('.picker-close').onclick=()=>overlay.remove();
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+  overlay.appendChild(sheet);document.body.appendChild(overlay);
+}
+
 // Copy Code
 function copyCode(btn){
   const code=btn.parentElement.querySelector('code');
@@ -599,14 +642,14 @@ checkAutoTheme();
 // Offline Cache
 // Chat Wallpapers
 const WALLPAPERS=[
-  {name:'پیش‌فرض',nameEn:'Default'},
-  {name:'موج',nameEn:'Waves'},
-  {name:'نقطه',nameEn:'Dots'},
-  {name:'زیگزاگ',nameEn:'Zigzag'},
-  {name:'شش‌ضلعی',nameEn:'Hexagon'},
-  {name:'ستاره',nameEn:'Star'},
-  {name:'دایره',nameEn:'Circles'},
-  {name:'لوزی',nameEn:'Diamond'}
+  {name:'پیش‌فرض',nameEn:'Default',icon:'🚫',color:'#1a1a2e'},
+  {name:'موج',nameEn:'Waves',icon:'🌊',color:'linear-gradient(135deg,#1a1a3e,#2a2a5e)'},
+  {name:'نقطه',nameEn:'Dots',icon:'⚫',color:'#1a1a2e'},
+  {name:'زیگزاگ',nameEn:'Zigzag',icon:'〰️',color:'linear-gradient(135deg,#1a1a3e,#2a2a5e)'},
+  {name:'شش‌ضلعی',nameEn:'Hexagon',icon:'⬡',color:'linear-gradient(135deg,#2a1a3e,#3a2a5e)'},
+  {name:'ستاره',nameEn:'Star',icon:'⭐',color:'linear-gradient(135deg,#1a1a2e,#2a2a3e)'},
+  {name:'دایره',nameEn:'Circles',icon:'⭕',color:'linear-gradient(135deg,#1a2a3e,#2a3a5e)'},
+  {name:'لوزی',nameEn:'Diamond',icon:'💎',color:'linear-gradient(135deg,#2a1a3e,#3a2a5e)'}
 ];
 let wpIdx=parseInt(localStorage.getItem('hermes_wallpaper')||'0');
 function cycleWallpaper(){
