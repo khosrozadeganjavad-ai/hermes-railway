@@ -275,7 +275,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <h3 data-i18n="sApp">APP</h3>
       <div class="settings-card">
         <div class="settings-item"><div class="si-icon pink">&#9889;</div><div class="si-text" data-i18n="sVer">نسخه اپلیکیشن</div><div class="si-value">2.0.0</div></div>
-        <div class="settings-item"><div class="si-icon orange">&#128272;</div><div class="si-text" data-i18n="sPrivacy">حریم خصوصی</div><div class="si-arrow">&#10095;</div></div>
       </div>
     </div>
   </div>
@@ -462,13 +461,13 @@ function addMsg(text,role,img){
   d.innerHTML=`<div class="avatar-sm">${role==='bot'?'&#9764;':'&#128100;'}</div><div class="bubble">${c}</div>`;
   d.addEventListener('click',e=>{
     if(d.querySelector('.msg-reactions'))return;
-    const bar=document.createElement('div');bar.className='msg-reactions';
-    REACTIONS.forEach(r=>{const s=document.createElement('span');s.className='react-btn';s.textContent=r;s.onclick=ev=>{ev.stopPropagation();s.classList.toggle('active');
-      if(s.classList.contains('active')){
-        const msgText=`[واکنش کاربر به پیام شما: ${r}] لطفاً به این واکنش جواب بده.`;
-        input.value=msgText;sendBtn.disabled=false;setTimeout(send,100);
-      }
-    };bar.appendChild(s);});
+    const bar=document.createElement('div');bar.className='msg-reactions';bar.style.cssText='display:flex;gap:4px;margin-top:6px;flex-wrap:wrap';
+    REACTIONS.forEach(r=>{const s=document.createElement('span');s.className='react-btn';s.textContent=r;
+    s.addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();
+      const msgText=`[واکنش کاربر به پیام شما: ${r}] لطفاً به این واکنش جواب بده.`;
+      input.value=msgText;sendBtn.disabled=false;setTimeout(send,100);
+    });bar.appendChild(s);});
+    d.appendChild(bar);
   });
   messages.appendChild(d);scrollDown();return d;
 }
