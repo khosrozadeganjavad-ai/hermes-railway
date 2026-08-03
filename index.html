@@ -672,7 +672,7 @@ let modelIdx=parseInt(localStorage.getItem("hermes_model")||"0");
 function openModelPicker(){
   showPicker(isFA?"مدل هوش مصنوعی":"AI Model",MODELS,modelIdx,i=>{
     modelIdx=i;localStorage.setItem("hermes_model",i);
-    toast(isFA?"مدل: ":"Model: "+MODELS[i].name);
+    document.getElementById("modelVal").textContent=MODELS[i].name;toast(isFA?"مدل: ":"Model: "+MODELS[i].name);
   });
 }
 function getModelId(){return MODELS[modelIdx]?.id||"Hermes";}
@@ -682,7 +682,7 @@ let autoTranslate=localStorage.getItem("hermes_autotranslate")==="true";
 function toggleAutoTranslate(){
   autoTranslate=!autoTranslate;
   localStorage.setItem("hermes_autotranslate",autoTranslate);
-  toast(isFA?(autoTranslate?"ترجمه خودکار فعال":"ترجمه خودکار غیرفعال"):(autoTranslate?"Auto-translate ON":"Auto-translate OFF"));
+  document.getElementById("translateVal").textContent=isFA?(autoTranslate?"فعال":"غیرفعال"):(autoTranslate?"ON":"OFF");toast(isFA?(autoTranslate?"ترجمه خودکار فعال":"ترجمه خودکار غیرفعال"):(autoTranslate?"Auto-translate ON":"Auto-translate OFF"));
 }
 
 // 3. Share Conversation
@@ -728,8 +728,6 @@ function addDeleteBtn(d,role){
   btn.onclick=e=>{e.stopPropagation();d.style.animation="fadeOut .3s ease";setTimeout(()=>d.remove(),300);};
   d.appendChild(btn);
 }
-d.addEventListener("mouseover",()=>d.querySelector(".msg-del")&&(d.querySelector(".msg-del").style.opacity="1"));
-d.addEventListener("mouseout",()=>d.querySelector(".msg-del")&&(d.querySelector(".msg-del").style.opacity="0"));
 
 // 3. Font Size
 let fontSize=parseInt(localStorage.getItem("hermes_font")||"14");
@@ -739,7 +737,7 @@ function cycleFontSize(){
   const idx=sizes.indexOf(fontSize);const next=(idx+1)%sizes.length;
   fontSize=sizes[next];localStorage.setItem("hermes_font",fontSize);
   document.querySelectorAll(".bubble").forEach(b=>b.style.fontSize=fontSize+"px");
-  toast(names[next]);
+  toast(names[next]);document.querySelectorAll(".settings-item").forEach(s=>{if(s.querySelector(".si-text")?.textContent.includes(isFA?"اندازه":"Font"))s.querySelector(".si-value").textContent=fontSize+"px";});
 }
 
 // 4. Usage Stats
@@ -771,7 +769,7 @@ function cycleChatTheme(){
   chatThemes[currentId]=colors[next];localStorage.setItem("hermes_chat_themes",JSON.stringify(chatThemes));
   if(colors[next])document.documentElement.style.setProperty("--accent",colors[next]);
   else document.documentElement.style.setProperty("--accent",localStorage.getItem("hermes_accent")||"#2979ff");
-  toast(names[next]);
+  toast(names[next]);document.querySelectorAll(".settings-item").forEach(s=>{if(s.querySelector(".si-text")?.textContent.includes(isFA?"اندازه":"Font"))s.querySelector(".si-value").textContent=fontSize+"px";});
 }
 
 
