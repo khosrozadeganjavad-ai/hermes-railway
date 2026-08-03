@@ -463,8 +463,12 @@ function addMsg(text,role,img){
   d.addEventListener('click',e=>{
     if(d.querySelector('.msg-reactions'))return;
     const bar=document.createElement('div');bar.className='msg-reactions';
-    REACTIONS.forEach(r=>{const s=document.createElement('span');s.className='react-btn';s.textContent=r;s.onclick=ev=>{ev.stopPropagation();s.classList.toggle('active');};bar.appendChild(s);});
-    d.appendChild(bar);
+    REACTIONS.forEach(r=>{const s=document.createElement('span');s.className='react-btn';s.textContent=r;s.onclick=ev=>{ev.stopPropagation();s.classList.toggle('active');
+      if(s.classList.contains('active')){
+        const msgText=`[واکنش کاربر به پیام شما: ${r}] لطفاً به این واکنش جواب بده.`;
+        input.value=msgText;sendBtn.disabled=false;setTimeout(send,100);
+      }
+    };bar.appendChild(s);});
   });
   messages.appendChild(d);scrollDown();return d;
 }
