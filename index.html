@@ -437,7 +437,7 @@ async function summarizeChat(){
   const summaryPrompt=isFA?'این مکالمه رو در ۳ جمله خلاصه کن:':'Summarize this conversation in 3 sentences:';
   const msgs=[...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content})),{role:'user',content:summaryPrompt}];
   addTyping();
-  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:msgs,stream:true})});
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},body:JSON.stringify({model:getModelId(),messages:msgs,stream:true})});
   rmTyping();if(!res.ok)throw new Error('API '+res.status);
   const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();
   while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}
@@ -663,16 +663,18 @@ async function sendVoiceMessage(text){
 
 // 1. Multi-Model Selector
 const MODELS=[
-  {name:"Hermes",nameEn:"Hermes",id:"Hermes",icon:"🌟",color:"linear-gradient(135deg,#2979ff,#1d4ed8)"},
-  {name:"GPT-4o",nameEn:"GPT-4o",id:"Hermes",icon:"🤖",color:"linear-gradient(135deg,#22c55e,#16a34a)",soon:true},
-  {name:"Claude",nameEn:"Claude",id:"Hermes",icon:"🧠",color:"linear-gradient(135deg,#f59e0b,#d97706)",soon:true},
-  {name:"Gemini",nameEn:"Gemini",id:"Hermes",icon:"💎",color:"linear-gradient(135deg,#8b5cf6,#7c3aed)",soon:true}
+  {name:"Hermes",nameEn:"Hermes",id:"nousresearch/hermes-3-llama-3.1-405b",icon:"🌟",color:"linear-gradient(135deg,#2979ff,#1d4ed8)"},
+  {name:"GPT-4o",nameEn:"GPT-4o",id:"openai/gpt-4o",icon:"🤖",color:"linear-gradient(135deg,#22c55e,#16a34a)"},
+  {name:"Claude",nameEn:"Claude",id:"anthropic/claude-sonnet-4",icon:"🧠",color:"linear-gradient(135deg,#f59e0b,#d97706)"},
+  {name:"Gemini",nameEn:"Gemini",id:"google/gemini-2.0-flash-001",icon:"💎",color:"linear-gradient(135deg,#8b5cf6,#7c3aed)"},
+  {name:"Llama",nameEn:"Llama 3",id:"meta-llama/llama-3.1-70b-instruct",icon:"🦙",color:"linear-gradient(135deg,#06b6d4,#0891b2)"},
+  {name:"Mistral",nameEn:"Mistral",id:"mistralai/mistral-large-latest",icon:"🌊",color:"linear-gradient(135deg,#ef4444,#dc2626)"}
 ];
 let modelIdx=parseInt(localStorage.getItem("hermes_model")||"0");
 function openModelPicker(){
   const items=MODELS.map((m,i)=>({...m,name:m.name+(m.soon?(isFA?" (بزودی)":" (soon)"):"")}));
   showPicker(isFA?"مدل هوش مصنوعی":"AI Model",items,modelIdx,i=>{
-    if(MODELS[i].soon){toast(isFA?"بزودی اضافه میشه!":"Coming soon!");return;}
+    
     modelIdx=i;localStorage.setItem("hermes_model",i);
     document.getElementById("modelVal").textContent=MODELS[i].name;
   });
@@ -895,7 +897,7 @@ async function send(){
   const sysPrompt=t.sys+(personality?'. '+personality.prompt:'');
   const profileName=userProfile.name?'. The user name is '+userProfile.name+'. Address them by name.':'.';
   const finalSys=sysPrompt+profileName;
-  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:[{role:'system',content:finalSys},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},body:JSON.stringify({model:getModelId(),messages:[{role:'system',content:finalSys},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
 playReceiveSound();}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
   loading=false;sendBtn.disabled=!input.value.trim();
 }

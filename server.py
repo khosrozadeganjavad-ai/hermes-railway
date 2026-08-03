@@ -13,7 +13,7 @@ sys.stderr.flush()
 def load_api_config():
     return {
         'api_key': os.environ.get('OPENAI_API_KEY', ''),
-        'base_url': os.environ.get('OPENAI_BASE_URL', 'https://api.openai.com/v1').rstrip('/')
+        'base_url': os.environ.get('OPENAI_BASE_URL', 'https://openrouter.ai/api/v1').rstrip('/')
     }
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -40,7 +40,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if self.path != '/v1/chat/completions': self.send_error(404); return
         try:
             c=load_api_config(); length=int(self.headers.get('Content-Length',0)); body=self.rfile.read(length); data=json.loads(body)
-            if data.get('model','').lower()=='hermes': data['model']='Hermes'
+            model_map = {
+        'hermes': 'nousresearch/hermes-3-llama-3.1-405b',
+        'gpt-4o': 'openai/gpt-4o',
+        'claude': 'anthropic/claude-sonnet-4',
+        'gemini': 'google/gemini-2.0-flash-001',
+        'llama': 'meta-llama/llama-3.1-70b-instruct',
+        'mistral': 'mistralai/mistral-large-latest'
+    }
+    m = data.get('model','hermes').lower()
+    data['model'] = model_map.get(m, m)
             msgs=data.get('messages',[])
             if not msgs or msgs[0].get('role')!='system': msgs.insert(0,{"role":"system","content":"Tu Hermes hasti, dastiyar-e AI Nous Research. Be farsi sohbat kon. Mukhtasar bash."})
             data['messages']=msgs
