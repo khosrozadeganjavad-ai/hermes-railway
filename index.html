@@ -216,6 +216,7 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
 .share-sheet .share-option .so-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
 
 @keyframes msgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0;visibility:hidden}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes dot{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-6px);opacity:1}}
@@ -240,7 +241,7 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
 </head>
 <body>
 <div id="app">
-  <div class="splash" id="splash">
+  <div class="splash" id="splash" style="animation:fadeOut .5s 3s forwards">
     <div class="splash-logo"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="36" fill="none" stroke="rgba(41,121,255,.25)" stroke-width="2"/><text x="40" y="52" text-anchor="middle" font-size="40" fill="var(--accent)" font-family="serif">&#9792;</text></svg></div>
     <div class="splash-text">Hermes</div>
   </div>
@@ -902,7 +903,7 @@ playReceiveSound();}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.co
 
 if(tg?.initDataUnsafe?.user){$('greetText').textContent=isFA?'خوش آمدید':'Welcome!';}
 // Splash Screen
-setTimeout(()=>{$('splash').classList.add('hide');},1500);
+setTimeout(()=>{const s=document.getElementById("splash");if(s)s.classList.add("hide");},1200);setTimeout(()=>{const s=document.getElementById("splash");if(s)s.remove();},2000);
 
 // Auto Dark/Light Mode
 function checkAutoTheme(){
