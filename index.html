@@ -116,6 +116,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .picker-item .pi-icon{font-size:24px;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center}
 .picker-item .pi-name{font-size:12px;font-weight:600;color:var(--text)}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.voice-recording{display:flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(239,68,68,.1);border-radius:12px;margin:0 16px 8px}
+.voice-recording .vr-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:vrPulse 1s ease infinite}
+.voice-recording .vr-text{font-size:12px;color:var(--red);flex:1}
+@keyframes vrPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+.visualizer{display:flex;align-items:center;gap:2px;height:24px}
+.visualizer .vb{width:3px;border-radius:2px;background:var(--red);animation:vbounce .6s ease infinite alternate}
+@keyframes vbounce{from{height:4px}to{height:20px}}
+.search-hl{background:rgba(245,158,11,.3);border-radius:2px;padding:0 2px}
 .inline-code{background:rgba(41,121,255,.15);border:1px solid rgba(41,121,255,.2);border-radius:4px;padding:1px 6px;font-size:12px;font-family:'Fira Code',monospace;color:var(--accent)}
 blockquote{border-right:3px solid var(--accent);padding:4px 12px;margin:8px 0;color:var(--text2);font-style:italic}
 h2,h3,h4{margin:8px 0 4px;color:var(--text)}
@@ -262,6 +270,7 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
         <button class="icon-btn" onclick="showHistory()" title="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg></button>
         <button class="icon-btn" onclick="summarizeChat()" title="Summarize"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>
         <button class="icon-btn" onclick="shareChat()" title="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+        <button class="icon-btn" onclick="exportChat()" title="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
       </div>
     </div>
     <div class="search-bar" id="searchBar"><input type="text" id="searchInput" placeholder="جستجو در چت..." oninput="searchChat(this.value)"></div>
@@ -440,14 +449,17 @@ function getCurrent(){if(!chatHistory[currentId])chatHistory[currentId]={title:'
 function showHistory(){
   const panel=$('historyPanel');panel.classList.add('active');
   const list=$('historyList');list.innerHTML='';
-  const sorted=Object.entries(chatHistory).sort((a,b)=>b[1].created-a[1].created);
+  const sorted=Object.entries(chatHistory).sort((a,b)=>{const pa=isPinned(a[0])?0:1;const pb=isPinned(b[0])?0:1;return pa!==pb?pa-pb:b[1].created-a[1].created;});
   if(!sorted.length){list.innerHTML=`<div class="hp-empty">${isFA?'مکالمه‌ای وجود ندارد':'No conversations yet'}</div>`;return;}
   sorted.forEach(([id,chat])=>{
-    const d=document.createElement('div');d.className='hp-item';
+    const d=document.createElement('div');d.className='hp-item';d.style.position='relative';
     const last=chat.messages.length?chat.messages[chat.messages.length-1].content:'';
     const preview=typeof last==='string'?last.substring(0,60):'[image]';
     const date=new Date(chat.created).toLocaleDateString(isFA?'fa-IR':'en-US');
-    d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h4>${chat.title}</h4><div class="hp-delete" onclick="event.stopPropagation();deleteChat('${id}')">&#128465;</div></div><p>${preview}</p><div class="hp-date">${date}</div>`;
+    const pinned=isPinned(id);
+    const pinIcon=pinned?'&#128204;':'&#128204;';
+    const pinStyle=pinned?'color:var(--accent)':'color:var(--text3);opacity:.4';
+    d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h4>${pinned?'&#128204; ':''}${chat.title}</h4><div style="display:flex;gap:8px"><span style="cursor:pointer;${pinStyle}" onclick="event.stopPropagation();togglePin('${id}')">${pinIcon}</span><div class="hp-delete" onclick="event.stopPropagation();deleteChat('${id}')">&#128465;</div></div></div><p>${preview}</p><div class="hp-date">${date}</div>`;
     d.onclick=()=>{currentId=id;renderChat();closeHistory();switchTab('chat')};
     list.appendChild(d);
   });
@@ -459,7 +471,7 @@ function renderChat(){messages.innerHTML='';const chat=getCurrent();chat.message
 
 // Search
 function toggleSearch(){$('searchBar').classList.toggle('active');if($('searchBar').classList.contains('active'))$('searchInput').focus();else $('searchInput').value='';}
-function searchChat(q){const msgs=messages.querySelectorAll('.msg');msgs.forEach(m=>{m.style.display=!q||m.textContent.toLowerCase().includes(q.toLowerCase())?'flex':'none'});}
+function searchChat(q){const msgs=messages.querySelectorAll('.msg');msgs.forEach(m=>{const bubble=m.querySelector('.bubble');if(!bubble)return;if(!q){m.style.display='flex';return;}const match=m.textContent.toLowerCase().includes(q.toLowerCase());m.style.display=match?'flex':'none';});}
 
 // Share
 function shareChat(){
@@ -478,10 +490,10 @@ function toggleVoice(){
   if(recording){recognition?.stop();return;}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   recognition=new SR();recognition.lang=isFA?'fa-IR':'en-US';recognition.interimResults=true;recognition.continuous=false;
-  recognition.onstart=()=>{recording=true;$('voiceBtn').classList.add('recording');};
-  recognition.onend=()=>{recording=false;$('voiceBtn').classList.remove('recording');};
+  recognition.onstart=()=>{recording=true;$("voiceBtn").classList.add("recording");startVisualizer();};
+  recognition.onend=()=>{recording=false;$("voiceBtn").classList.remove("recording");stopVisualizer();};
   recognition.onresult=e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');input.value=t;sendBtn.disabled=false;};
-  recognition.onerror=()=>{recording=false;$('voiceBtn').classList.remove('recording');};
+  recognition.onerror=()=>{recording=false;$("voiceBtn").classList.remove("recording");stopVisualizer();};
   recognition.start();
 }
 
@@ -530,6 +542,53 @@ function playReceiveSound(){
   o.type='sine';g.gain.value=0.06;g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.2);
   o.start();o.stop(audioCtx.currentTime+0.2);}catch(e){}
 }
+
+// Visualizer
+let vizBars=null;
+function startVisualizer(){
+  const container=document.createElement("div");container.className="visualizer";container.id="viz";
+  for(let i=0;i<20;i++){const b=document.createElement("div");b.className="vb";b.style.animationDelay=i*0.03+"s";container.appendChild(b);}
+  const rec=$("voiceBtn");if(rec)rec.parentElement.insertBefore(container,rec);
+}
+function stopVisualizer(){const v=$("viz");if(v)v.remove();}
+
+// Export Conversation
+function exportChat(){
+  const chat=getCurrent();if(!chat.messages.length){toast(isFA?"مکالمه‌ای نیست":"No messages");return;}
+  let text="=== Hermes Chat ===\n"+chat.title+"\n\n";
+  chat.messages.forEach(m=>{text+=(m.role==="user"?(isFA?"شما":"You"):"Hermes")+": "+m.content+"\n\n";});
+  const blob=new Blob([text],{type:"text/plain"});const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="hermes-chat.txt";a.click();
+  toast(isFA?"دانلود شد":"Downloaded!");
+}
+
+// Easter Eggs
+const EGGS={
+  ping:"pong 🏓",
+  "hello":"Hello! 👋 How are you?",
+  "سلام":"سلام! خوبی؟ 😊",
+  "چطوری":"خوبم ممنون! تو چطوری؟ 😄",
+  "test":"Test passed! ✅",
+  "bravo":"Bravo! 🎉👏",
+  "pi":"3.14159265358979 🥧",
+  "e":"2.71828182845905 🔢",
+  "42":"The Answer to Life, the Universe, and Everything 🌌",
+  "خسته‌ام":"استراحت کن! 💤 مراقب خودت باش ❤️",
+  "ممنون":"خواهش میکنم! 🌟",
+  "دوتadan":"Hermes ❤️ User",
+  "love":"❤️🩷💜💚🧡"
+};
+function checkEgg(text){const t=text.toLowerCase().trim();return EGGS[t]||null;}
+
+// Pin Chat
+let pinnedChats=JSON.parse(localStorage.getItem("hermes_pinned")||"[]");
+function togglePin(id){
+  const i=pinnedChats.indexOf(id);
+  if(i>=0)pinnedChats.splice(i,1);else pinnedChats.push(id);
+  localStorage.setItem("hermes_pinned",JSON.stringify(pinnedChats));
+  showHistory();
+}
+function isPinned(id){return pinnedChats.includes(id);}
 
 // Generic Picker
 function showPicker(title,items,currentIdx,onSelect){
@@ -608,6 +667,7 @@ function showModal(src){const m=document.createElement('div');m.className='modal
 async function send(){
   const text=input.value.trim();if((!text&&!imageData)||loading)return;
   const calcResult=tryCalc(text);if(calcResult){addMsg(calcResult,'bot');return;}
+  const egg=checkEgg(text);if(egg){addMsg(egg,"bot");return;}
   const msg={role:'user',content:[]};if(text)msg.content.push({type:'text',text});if(imageData)msg.content.push({type:'image_url',image_url:{url:imageData}});
   if(!msg.content.length)return;if(msg.content.length===1&&msg.content[0].type==='text')msg.content=text;
   input.value='';input.style.height='auto';sendBtn.disabled=true;loading=true;
