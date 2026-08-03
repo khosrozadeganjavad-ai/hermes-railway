@@ -327,7 +327,7 @@ if(tg){tg.ready();tg.expand();tg.setHeaderColor('#1a6dff');tg.setBackgroundColor
 
 const $=id=>document.getElementById(id);
 const messages=$('messages'),input=$('input'),sendBtn=$('sendBtn'),previewEl=$('preview'),fileInput=$('fileInput'),API=window.location.origin+'/v1/chat/completions';
-let history=loadConversations(),currentId=Date.now().toString(),loading=false,imageData=null,isFA=true,accentIdx=0,isDark=true;
+let chatHistory=loadConversations(),currentId=Date.now().toString(),loading=false,imageData=null,isFA=true,accentIdx=0,isDark=true;
 
 const ACCENTS=['#2979ff','#e91e7a','#7c3aed','#22c55e','#f59e0b','#ef4444'];
 const ACCENT_NAMES={fa:['آبی','صورتی','بنفش','سبز','نارنجی','قرمز','فیروزه‌ای','یاسی'],en:['Blue','Pink','Purple','Green','Orange','Red','Teal','Lilac']};
@@ -412,13 +412,13 @@ function tryCalc(text){
 
 // Conversations
 function loadConversations(){try{return JSON.parse(localStorage.getItem('hermes_chats')||'{}')}catch(e){return{}}}
-function saveConversations(){localStorage.setItem('hermes_chats',JSON.stringify(history))}
-function getCurrent(){if(!history[currentId])history[currentId]={title:'New chat',messages:[],created:Date.now()};return history[currentId];}
+function saveConversations(){localStorage.setItem('hermes_chats',JSON.stringify(chatHistory))}
+function getCurrent(){if(!chatHistory[currentId])chatHistory[currentId]={title:'New chat',messages:[],created:Date.now()};return chatHistory[currentId];}
 
 function showHistory(){
   const panel=$('historyPanel');panel.classList.add('active');
   const list=$('historyList');list.innerHTML='';
-  const sorted=Object.entries(history).sort((a,b)=>b[1].created-a[1].created);
+  const sorted=Object.entries(chatHistory).sort((a,b)=>b[1].created-a[1].created);
   if(!sorted.length){list.innerHTML=`<div class="hp-empty">${isFA?'مکالمه‌ای وجود ندارد':'No conversations yet'}</div>`;return;}
   sorted.forEach(([id,chat])=>{
     const d=document.createElement('div');d.className='hp-item';
@@ -431,8 +431,8 @@ function showHistory(){
   });
 }
 function closeHistory(){$('historyPanel').classList.remove('active');}
-function deleteChat(id){delete history[id];saveConversations();showHistory();if(id===currentId){currentId=Date.now().toString();renderChat()}}
-function clearHistory(){if(confirm(isFA?'همه مکالمات پاک بشه؟':'Delete all conversations?')){history={};saveConversations();showHistory();currentId=Date.now().toString();renderChat()}}
+function deleteChat(id){delete chatHistory[id];saveConversations();showHistory();if(id===currentId){currentId=Date.now().toString();renderChat()}}
+function clearHistory(){if(confirm(isFA?'همه مکالمات پاک بشه؟':'Delete all conversations?')){chatHistory={};saveConversations();showHistory();currentId=Date.now().toString();renderChat()}}
 function renderChat(){messages.innerHTML='';const chat=getCurrent();chat.messages.forEach(m=>{addMsg(m.content,m.role==='user'?'user':'bot',m.image);});scrollDown();}
 
 // Search
@@ -626,11 +626,11 @@ function applyWallpaper(){
 }
 
 // Offline Cache
-function cacheConversations(){try{localStorage.setItem('hermes_cache',JSON.stringify(history));}catch(e){}}
-function loadCache(){try{const c=localStorage.getItem('hermes_cache');if(c)history=JSON.parse(c);}catch(e){}}
+function cacheConversations(){try{localStorage.setItem('hermes_cache',JSON.stringify(chatHistory));}catch(e){}}
+function loadCache(){try{const c=localStorage.getItem('hermes_cache');if(c)Object.assign(chatHistory,JSON.parse(c));}catch(e){}}
 loadCache();
 
 applyLang();applyWallpaper();input.focus();
-</script>
+</script></script>
 </body>
 </html>
