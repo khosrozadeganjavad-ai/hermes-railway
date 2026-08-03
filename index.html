@@ -594,8 +594,9 @@ let voiceListening=false;
 let voiceContinuous=false;
 
 function openVoiceMode(){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){toast(isFA?'مرورگر پشتیبانی نمیکند':'Not supported');return;}
   voiceModeActive=true;
-  $("voiceOverlay").classList.remove("hidden");
+  document.getElementById('voiceOverlay').classList.remove('hidden');
   initVoiceWaves();
   startVoiceListening();
 }
