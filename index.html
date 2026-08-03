@@ -600,13 +600,13 @@ checkAutoTheme();
 // Chat Wallpapers
 const WALLPAPERS=[
   {name:'پیش‌فرض',nameEn:'Default'},
-  {name:'ابری',nameEn:'Cloudy',bg:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)'},
-  {name:'اقیانوس',nameEn:'Ocean',bg:'linear-gradient(135deg,#000428,#004e92)'},
-  {name:'غروب',nameEn:'Sunset',bg:'linear-gradient(135deg,#1f1c2c,#928dab)'},
-  {name:'شب',nameEn:'Night',bg:'linear-gradient(135deg,#0f2027,#203a43,#2c5364)'},
-  {name:'بنفش',nameEn:'Purple',bg:'linear-gradient(135deg,#1a0533,#3d1a78,#6b21a8)'},
-  {name:'گلبهی',nameEn:'Peach',bg:'linear-gradient(135deg,#2d1b36,#6b21a8,#ec4899)'},
-  {name:'جنگل',nameEn:'Forest',bg:'linear-gradient(135deg,#0b3d0b,#134e13,#1a5c1a)'}
+  {name:'موج',nameEn:'Waves'},
+  {name:'نقطه',nameEn:'Dots'},
+  {name:'زیگزاگ',nameEn:'Zigzag'},
+  {name:'شش‌ضلعی',nameEn:'Hexagon'},
+  {name:'ستاره',nameEn:'Star'},
+  {name:'دایره',nameEn:'Circles'},
+  {name:'لوزی',nameEn:'Diamond'}
 ];
 let wpIdx=parseInt(localStorage.getItem('hermes_wallpaper')||'0');
 function cycleWallpaper(){
@@ -616,9 +616,23 @@ function cycleWallpaper(){
 }
 function applyWallpaper(){
   const wp=WALLPAPERS[wpIdx];
+  const svgPatterns=[
+    '', // default
+    `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><path d='M0 100 Q50 50 100 100 T200 100' fill='none' stroke='rgba(41,121,255,0.12)' stroke-width='2'/><path d='M0 150 Q50 100 100 150 T200 150' fill='none' stroke='rgba(233,30,122,0.08)' stroke-width='1.5'/><path d='M0 50 Q50 0 100 50 T200 50' fill='none' stroke='rgba(124,58,237,0.1)' stroke-width='1.5'/></svg>`,
+    `<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'><circle cx='15' cy='15' r='1.2' fill='rgba(255,255,255,0.1)'/></svg>`,
+    `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='16'><polyline points='0,16 15,0 30,16 45,0 60,16' fill='none' stroke='rgba(41,121,255,0.08)' stroke-width='1'/></svg>`,
+    `<svg xmlns='http://www.w3.org/2000/svg' width='56' height='48'><polygon points='28,2 52,14 52,34 28,46 4,34 4,14' fill='none' stroke='rgba(124,58,237,0.08)' stroke-width='1'/></svg>`,
+    `<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><polygon points='25,3 29,18 44,18 32,27 36,42 25,33 14,42 18,27 6,18 21,18' fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1'/></svg>`,
+    `<svg xmlns='http://www.w3.org/2000/svg' width='50' height='50'><circle cx='25' cy='25' r='18' fill='none' stroke='rgba(41,121,255,0.07)' stroke-width='1'/><circle cx='25' cy='25' r='8' fill='none' stroke='rgba(233,30,122,0.06)' stroke-width='1'/></svg>`,
+    `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect x='11' y='11' width='18' height='18' rx='1' transform='rotate(45 20 20)' fill='none' stroke='rgba(124,58,237,0.08)' stroke-width='1'/></svg>`
+  ];
   document.querySelectorAll('.messages').forEach(m=>{
     if(wpIdx===0){m.style.background='';}
-    else{m.style.background=wp.bg||'';}
+    else{
+      const svg=svgPatterns[wpIdx]||'';
+      const encoded=btoa(svg);
+      m.style.background=`url("data:image/svg+xml;base64,${encoded}")`;
+    }
   });
   $('wallpaperVal').textContent=isFA?WALLPAPERS[wpIdx].name:WALLPAPERS[wpIdx].nameEn;
 }
