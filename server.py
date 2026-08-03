@@ -42,11 +42,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             c=load_api_config(); length=int(self.headers.get('Content-Length',0)); body=self.rfile.read(length); data=json.loads(body)
             model_map = {
                 'hermes': 'nousresearch/hermes-3-llama-3.1-405b',
-                'gpt-4o': 'openai/gpt-4o',
-                'claude': 'anthropic/claude-sonnet-4',
-                'gemini': 'google/gemini-2.0-flash-001',
-                'llama': 'meta-llama/llama-3.1-70b-instruct',
-                'mistral': 'mistralai/mistral-large-latest'
+                'gemma': 'google/gemma-4-31b-it:free',
+                'nemotron': 'nvidia/nemotron-3-ultra-550b-a55b:free',
+                'gpt-oss': 'openai/gpt-oss-20b:free',
+                'openrouter': 'openrouter/free'
             }
             m = data.get('model','hermes').lower()
             data['model'] = model_map.get(m, m)
