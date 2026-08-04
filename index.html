@@ -373,6 +373,7 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
 <input type="file" id="fileInput" accept="image/*" style="display:none">
 
 <script>
+function loadTheme(){const s=localStorage.getItem('hermes_accent')||'#2979ff';document.documentElement.style.setProperty('--accent',s);const bg=document.getElementById('bgGrad');if(bg)bg.style.background=`radial-gradient(ellipse at 50% 0%,${s} 0%,color-mix(in srgb,${s} 30%,#000) 30%,#050a1a 65%,#000 100%)`;}loadTheme();
 const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();tg.setHeaderColor('#1a6dff');tg.setBackgroundColor('#000')}
 
