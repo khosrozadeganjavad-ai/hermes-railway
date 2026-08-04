@@ -42,7 +42,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             c=load_api_config(); length=int(self.headers.get('Content-Length',0)); body=self.rfile.read(length); data=json.loads(body)
             model_map = {
                 'hermes': 'nousresearch/hermes-3-llama-3.1-405b',
-                'gemma': 'google/gemma-4-31b-it:free',
+                'nemotron-super': 'nvidia/nemotron-3-super-120b-a12b:free',
                 'nemotron': 'nvidia/nemotron-3-ultra-550b-a55b:free',
                 'gpt-oss': 'openai/gpt-oss-20b:free',
                 'openrouter': 'openrouter/free'
