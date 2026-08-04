@@ -1032,15 +1032,13 @@ document.addEventListener('touchstart',e=>{
 document.addEventListener('touchend',()=>clearTimeout(longPressTimer),{passive:true});
 
 
-// Global Error Handler
+// Global Error Handler (console only - no UI spam)
 window.onerror=function(msg,url,line,col,err){
-  console.error('Error:',msg,'at',url,':',line);
-  toast('⚠️ '+msg);
+  console.error('[Hermes]',msg,'at',url+':'+line);
   return false;
 };
 window.addEventListener('unhandledrejection',e=>{
-  console.error('Unhandled:',e.reason);
-  toast('⚠️ Connection issue');
+  console.error('[Hermes] Unhandled:',e.reason);
 });
 // Auto-backup to localStorage every minute
 setInterval(()=>{
