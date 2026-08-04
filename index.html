@@ -383,6 +383,9 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
         <div class="settings-item" onclick="openModelPicker()"><div class="si-icon orange">&#129302;</div><div class="si-text">مدل AI</div><div class="si-value" id="modelVal">Hermes</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="cycleFontSize()"><div class="si-icon pink">&#128207;</div><div class="si-text">اندازه متن</div><div class="si-value">14px</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="toggleAutoTranslate()"><div class="si-icon green">&#127760;</div><div class="si-text">ترجمه خودکار</div><div class="si-value" id="translateVal">غیرفعال</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="quickSend('آب و هوا')"><div class="si-icon blue">🌤️</div><div class="si-text">آب و هوا</div><div class="si-arrow">❯</div></div>
+        <div class="settings-item" onclick="quickSend('ترجمه کن hello به فارسی')"><div class="si-icon green">🌍</div><div class="si-text">مترجم سریع</div><div class="si-arrow">❯</div></div>
+        <div class="settings-item" onclick="quickSend('125 * 37 + 890')"><div class="si-icon orange">🧮</div><div class="si-text">ماشین حساب</div><div class="si-arrow">❯</div></div>
         <div class="settings-item" onclick="showStats()"><div class="si-icon purple">&#128200;</div><div class="si-text">آمار استفاده</div><div class="si-arrow">&#10095;</div></div>
       </div>
     </div>
@@ -473,7 +476,7 @@ async function summarizeChat(){
   const chat=getCurrent();if(!chat.messages.length){toast(isFA?'مکالمه‌ای نیست':'No messages');return;}
   const t=T[isFA?'fa':'en'];
   const summaryPrompt=isFA?'این مکالمه رو در ۳ جمله خلاصه کن:':'Summarize this conversation in 3 sentences:';
-  const msgs=[...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content})),{role:'user',content:summaryPrompt}];
+  const msgs=[...chat.messages.slice(-30).map(m=>({role:m.role,content:m.content})),{role:'user',content:summaryPrompt}];
   addTyping();
   try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:msgs,stream:true})});
   rmTyping();if(!res.ok)throw new Error('API '+res.status);
@@ -932,6 +935,36 @@ async function send(){
   playSendSound();
   const chat=getCurrent();
   chat.messages.push({role:'user',content:text||'[image]',image:img,ts:Date.now()});
+  // Check weather first
+  const weatherCheck=tryWeather(text);
+  if(weatherCheck.isWeather){
+    addMsg(isFA?'⏳ دارم آب و هوا رو چک میکنم...':'⏳ Checking weather...','bot');
+    getWeather().then(w=>{
+      if(!w){addMsg(isFA?'❌ خطا در دریافت آب و هوا':'❌ Weather error','bot');return;}
+      const msg=w.icon+' **'+(isFA?'آب و هوا':'Weather')+'**\n\n'+
+        (isFA?'دمای فعلی':'Temp')+': '+w.temp+'°C ('+(isFA?'احساس':'Feels like')+': '+w.feels+'°C)\n'+
+        (isFA?'توصیف':'Desc')+': '+w.desc+'\n'+
+        (isFA?'رطوبت':'Humidity')+': '+w.humidity+'%\n'+
+        (isFA?'باد':'Wind')+': '+w.wind+' km/h\n'+
+        (isFA?'حداقل':'Min')+': '+w.min+'°C | '+(isFA?'حداکثر':'Max')+': '+w.max+'°C';
+      // Remove typing
+      const typingEl=document.getElementById('typing');if(typingEl)typingEl.remove();
+      addMsg(msg,'bot');
+      chat.messages.push({role:'assistant',content:msg,ts:Date.now()});saveConversations();
+    });
+    return;
+  }
+  // Check translate
+  const transCheck=tryTranslate(text);
+  if(transCheck.isTranslate){
+    addMsg(isFA?'⏳ دارم ترجمه میکنم...':'⏳ Translating...','bot');
+  }
+  // Check smart features first
+  const smartResult=handleSmartFeatures(text);
+  if(smartResult.handled){
+    addMsg(smartResult.response,'bot');chat.messages.push({role:'assistant',content:smartResult.response,ts:Date.now()});saveConversations();
+    loading=false;sendBtn.disabled=!input.value.trim();return;
+  }
   if(!chat.title||chat.title==='New chat')chat.title=(text||'Chat').substring(0,40);
   saveConversations();addTyping();
   const t=T[isFA?'fa':'en'];
@@ -939,12 +972,22 @@ async function send(){
   const modelName=MODELS[modelIdx]?.name||'AI';const sysPrompt=t.sys+' Your name is '+modelName+'.'+(personality?'. '+personality.prompt:'');
   const profileName=userProfile.name?'. The user name is '+userProfile.name+'. Address them by name.':'.';
   const finalSys=sysPrompt+profileName;
-  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:[{role:'system',content:finalSys},...chat.messages.slice(-20).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');
+  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:[{role:'system',content:finalSys},...chat.messages.slice(-30).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');notifyBot(bot);
 playReceiveSound();}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
   loading=false;sendBtn.disabled=!input.value.trim();
 }
 
 if(tg?.initDataUnsafe?.user){$('greetText').textContent=isFA?'خوش آمدید':'Welcome!';}
+// Request notification permission
+if('Notification' in window && Notification.permission==='default'){
+  setTimeout(()=>{if(!document.hidden)Notification.requestPermission();},5000);
+}
+// Notify on message received
+function notifyBot(msg){
+  if('Notification' in window && Notification.permission==='granted'){
+    new Notification('Hermes 🌟',{body:msg.substring(0,100),icon:'/sw.js'});
+  }
+}
 // Splash Screen
 setTimeout(()=>{const s=document.getElementById("splash");if(s)s.classList.add("hide");},1200);setTimeout(()=>{const s=document.getElementById("splash");if(s)s.remove();},2000);
 
