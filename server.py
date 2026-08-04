@@ -24,19 +24,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     def do_OPTIONS(self):
         self.send_response(200); self._cors(); self.end_headers()
-    def do_GET(self):
-        if self.path == '/health':
-            self.send_response(200); self.send_header('Content-Type','application/json'); self._cors(); self.end_headers()
-            self.wfile.write(b'{"status":"ok"}')
-        elif self.path in ('/','/index.html'):
-            try:
-                with open(INDEX,'rb') as f: data=f.read()
-                self.send_response(200); self.send_header('Content-Type','text/html; charset=utf-8'); self._cors(); self.end_headers()
-                self.wfile.write(data)
-            except Exception as e:
-                self.send_response(500); self.end_headers(); self.wfile.write(str(e).encode())
-        
-    def do_GET(self):
         if self.path == '/health':
             self.send_response(200); self.send_header('Content-Type','application/json'); self._cors(); self.end_headers()
             self.wfile.write(b'{"status":"ok"}')
