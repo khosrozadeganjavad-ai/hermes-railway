@@ -923,7 +923,7 @@ function showModal(src){const m=document.createElement('div');m.className='modal
 
 async function send(){
   const text=input.value.trim();if((!text&&!imageData)||loading)return;
-  const calcResult=tryCalc(text);if(calcResult){addMsg(calcResult,'bot');return;}
+  
   const egg=checkEgg(text);if(egg){addMsg(egg,"bot");return;}
   const msg={role:'user',content:[]};if(text)msg.content.push({type:'text',text});if(imageData)msg.content.push({type:'image_url',image_url:{url:imageData}});
   if(!msg.content.length)return;if(msg.content.length===1&&msg.content[0].type==='text')msg.content=text;
@@ -932,10 +932,7 @@ async function send(){
   playSendSound();
   const chat=getCurrent();
   chat.messages.push({role:'user',content:text||'[image]',image:img,ts:Date.now()});
-  // Smart features removed - pass to AI
-    addMsg(smartResult.response,'bot');chat.messages.push({role:'assistant',content:smartResult.response,ts:Date.now()});saveConversations();
-    loading=false;sendBtn.disabled=!input.value.trim();return;
-  }
+
   if(!chat.title||chat.title==='New chat')chat.title=(text||'Chat').substring(0,40);
   saveConversations();addTyping();
   const t=T[isFA?'fa':'en'];
