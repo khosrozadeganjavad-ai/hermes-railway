@@ -476,7 +476,7 @@ async function summarizeChat(){
   const msgs=[...chat.messages.slice(-30).map(m=>({role:m.role,content:m.content})),{role:'user',content:summaryPrompt}];
   addTyping();
   try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:msgs,stream:true})});
-  rmTyping();if(!res.ok)throw new Error('API '+res.status);
+  rmTyping();if(!res.ok){const errBody=await res.text().catch(()=>'');if(res.status===429)throw new Error(t.fa?'مدل شلوغه، لطفاً چند لحظه صبر کنید':'Model busy, please wait a moment');throw new Error('API '+res.status);}
   const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();
   while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}
   chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();
@@ -706,7 +706,7 @@ const MODELS=[
   {name:"Laguna",nameEn:"Poolside Laguna",id:"poolside/laguna-s-2.1:free",icon:"🌊",color:"linear-gradient(135deg,#0288d1,#01579b)"},
   {name:"Auto",nameEn:"Best Free",id:"openrouter/free",icon:"🔄",color:"linear-gradient(135deg,#607d8b,#455a64)"}
 ];
-let modelIdx=parseInt(localStorage.getItem("hermes_model")||"0");
+let modelIdx=parseInt(localStorage.getItem("hermes_model")||"2");
 function openModelPicker(){
   const items=MODELS.map((m,i)=>({...m,name:m.name+(m.soon?(isFA?" (بزودی)":" (soon)"):"")}));
   showPicker(isFA?"مدل هوش مصنوعی":"AI Model",items,modelIdx,i=>{
@@ -915,6 +915,19 @@ function scrollDown(){requestAnimationFrame(()=>messages.scrollTop=messages.scro
 function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
 function showModal(src){const m=document.createElement('div');m.className='modal';m.innerHTML=`<img src="${src}"><button class="close" onclick="this.parentElement.remove()">✕</button>`;m.addEventListener('click',e=>{if(e.target===m)m.remove()});document.body.appendChild(m);}
 
+// Retry with fallback models
+const FALLBACK_MODELS=['nvidia/nemotron-3-super-120b-a12b:free','nvidia/nemotron-3-ultra-550b-a55b:free','openai/gpt-oss-20b:free'];
+async function sendWithFallback(messages,model,retries=2){
+  for(let i=0;i<=retries;i++){
+    try{
+      const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:i===0?model:FALLBACK_MODELS[i%FALLBACK_MODELS.length],messages,stream:true})});
+      if(res.ok)return res;
+      if(res.status===429){await new Promise(r=>setTimeout(r,500*(i+1)));continue;}
+      return res;
+    }catch(e){if(i===retries)throw e;await new Promise(r=>setTimeout(r,500*(i+1)));}
+  }
+}
+
 async function send(){
   const text=input.value.trim();if((!text&&!imageData)||loading)return;
   
@@ -934,7 +947,8 @@ async function send(){
   const modelName=MODELS[modelIdx]?.name||'AI';const sysPrompt=t.sys+' Your name is '+modelName+'.'+(personality?'. '+personality.prompt:'');
   const profileName=userProfile.name?'. The user name is '+userProfile.name+'. Address them by name.':'.';
   const finalSys=sysPrompt+profileName;
-  try{const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:getModelId(),messages:[{role:'system',content:finalSys},...chat.messages.slice(-30).map(m=>({role:m.role,content:m.content}))],stream:true})});rmTyping();if(!res.ok)throw new Error('API '+res.status);const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');notifyBot(bot);
+  try{const allMsgs=[{role:'system',content:finalSys},...chat.messages.slice(-30).map(m=>({role:m.role,content:m.content}))];
+      const res=await sendWithFallback(allMsgs,getModelId());rmTyping();if(!res.ok){const errBody=await res.text().catch(()=>'');if(res.status===429)throw new Error(t.fa?'مدل شلوغه، لطفاً چند لحظه صبر کنید':'Model busy, please wait a moment');throw new Error('API '+res.status);}const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');notifyBot(bot);
 playReceiveSound();}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
   loading=false;sendBtn.disabled=!input.value.trim();
 }
