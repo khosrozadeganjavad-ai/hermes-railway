@@ -50,7 +50,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             m = data.get('model','hermes').lower()
             data['model'] = model_map.get(m, m)
             msgs=data.get('messages',[])
-            if not msgs or msgs[0].get('role')!='system': msgs.insert(0,{"role":"system","content":"Tu Hermes hasti, dastiyar-e AI Nous Research. Be farsi sohbat kon. Mukhtasar bash."})
+            if not msgs or msgs[0].get('role')!='system':
+                name_map = {'nousresearch/hermes-3-llama-3.1-405b':'Hermes','google/gemma-4-31b-it:free':'Gemma','nvidia/nemotron-3-ultra-550b-a55b:55b-a55b':'Nemotron','openai/gpt-oss-20b':'GPT-OSS','openrouter/free':'AI'}
+                ai_name = name_map.get(data.get('model','hermes'),'AI')
+                msgs.insert(0,{"role":"system","content":f"You are {ai_name}, a helpful AI assistant by Nous Research. Speak in the same language as the user. Be concise."})
             data['messages']=msgs
             req=urllib.request.Request(f"{c['base_url']}/chat/completions",data=json.dumps(data).encode(),headers={'Content-Type':'application/json','Authorization':f"Bearer {c['api_key']}"},method='POST')
             ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
