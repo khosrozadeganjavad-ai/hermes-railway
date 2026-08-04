@@ -374,10 +374,6 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
 <input type="file" id="fileInput" accept="image/*" style="display:none">
 
 <script>
-function loadTheme(){const s=localStorage.getItem('hermes_accent')||'#2979ff';document.documentElement.style.setProperty('--accent',s);const bg=document.getElementById('bgGrad');if(bg)bg.style.background=`radial-gradient(ellipse at 50% 0%,${s} 0%,color-mix(in srgb,${s} 30%,#000) 30%,#050a1a 65%,#000 100%)`;}
-loadTheme();
-// Load personality on start
-(function(){const idx=parseInt(localStorage.getItem('hermes_personality')||'0');if(PERSONALITIES[idx])document.getElementById('personalityVal').textContent=isFA?PERSONALITIES[idx].name:PERSONALITIES[idx].nameEn;})();
 const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();tg.setHeaderColor('#1a6dff');tg.setBackgroundColor('#000')}
 
@@ -965,6 +961,17 @@ function loadCache(){try{const c=localStorage.getItem('hermes_cache');if(c)Objec
 loadCache();
 
 applyLang();applyWallpaper();input.focus();
+// Apply saved theme + personality + font
+(function(){
+  const accent=localStorage.getItem('hermes_accent')||'#2979ff';
+  document.documentElement.style.setProperty('--accent',accent);
+  const bg=document.getElementById('bgGrad');
+  if(bg)bg.style.background=`radial-gradient(ellipse at 50% 0%,${accent} 0%,color-mix(in srgb,${accent} 30%,#000) 30%,#050a1a 65%,#000 100%)`;
+  const pi=parseInt(localStorage.getItem('hermes_personality')||'0');
+  if(PERSONALITIES[pi])$('personalityVal').textContent=isFA?PERSONALITIES[pi].name:PERSONALITIES[pi].nameEn;
+  const fs=parseInt(localStorage.getItem('hermes_font')||'14');
+  document.querySelectorAll('.bubble').forEach(b=>b.style.fontSize=fs+'px');
+})();
 </script>
 </body>
 </html>
