@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="dns-prefetch" href="//fonts.googleapis.com">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hermes</title>
@@ -238,6 +242,39 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
 .voice-close{position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .voice-btn-main{width:72px;height:72px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 4px 20px rgba(41,121,255,.4);transition:all .2s}
 .voice-btn-main:active{transform:scale(.9)}
+
+/* Premium Animations */
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(var(--accent-rgb),0.3)}50%{box-shadow:0 0 40px rgba(var(--accent-rgb),0.6)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:1}100%{transform:scale(1.5);opacity:0}}
+.msg{animation:slideUp .3s ease}
+.bubble{transition:all .2s ease;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.bubble:active{transform:scale(0.98)}
+.card{transition:all .3s cubic-bezier(0.4,0,0.2,1)}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.3)}
+.card:active{transform:scale(0.97)}
+.nav-item{transition:all .3s cubic-bezier(0.4,0,0.2,1)}
+.nav-item:active{transform:scale(0.9)}
+.settings-item{transition:all .2s ease}
+.settings-item:active{transform:scale(0.98);background:rgba(255,255,255,0.05)}
+.send-btn{transition:all .2s cubic-bezier(0.4,0,0.2,1)}
+.send-btn:active{transform:scale(0.9)}
+.typing span{animation:typing 1.4s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+/* Glass morphism improvement */
+.header,.chat-header,.bottom-nav{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(0,0,0,0.7)}
+/* Premium scrollbar */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:10px}
+::-webkit-scrollbar-track{background:transparent}
+/* Smooth page transitions */
+.page{transition:opacity .2s ease}
+.page:not(.active){opacity:0;pointer-events:none}
+.page.active{opacity:1}
 </style>
 </head>
 <body>
@@ -960,7 +997,90 @@ function cacheConversations(){try{localStorage.setItem('hermes_cache',JSON.strin
 function loadCache(){try{const c=localStorage.getItem('hermes_cache');if(c)Object.assign(chatHistory,JSON.parse(c));}catch(e){}}
 loadCache();
 
+
+// Keyboard Shortcuts
+document.addEventListener('keydown',e=>{
+  // Ctrl+K = Focus search
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();switchTab('chat');toggleSearch();}
+  // Ctrl+N = New chat
+  if((e.ctrlKey||e.metaKey)&&e.key==='n'){e.preventDefault();newChat();switchTab('chat');}
+  // Ctrl+/ = Toggle dark mode
+  if((e.ctrlKey||e.metaKey)&&e.key==='/'){e.preventDefault();toggleDark();}
+  // Escape = Close overlays
+  if(e.key==='Escape'){
+    document.querySelectorAll('.picker-overlay,.modal,.share-modal').forEach(el=>el.remove());
+    closeHistory();
+  }
+  // Ctrl+1/2/3 = Switch tabs
+  if((e.ctrlKey||e.metaKey)&&e.key==='1'){e.preventDefault();switchTab('explore');}
+  if((e.ctrlKey||e.metaKey)&&e.key==='2'){e.preventDefault();switchTab('chat');}
+  if((e.ctrlKey||e.metaKey)&&e.key==='3'){e.preventDefault();switchTab('settings');}
+});
+// Haptic feedback helper
+function haptic(type){if(tg?.HapticFeedback)tg.HapticFeedback.impactOccurred(type||'light');}
+// Better error display
+function showError(msg){toast('❌ '+msg);}
+// Auto-save every 30s
+setInterval(saveConversations,30000);
+// Long press on messages for actions
+let longPressTimer;
+document.addEventListener('touchstart',e=>{
+  const msg=e.target.closest('.bubble');
+  if(!msg)return;
+  longPressTimer=setTimeout(()=>{haptic('medium');/* Could show context menu */},500);
+},{passive:true});
+document.addEventListener('touchend',()=>clearTimeout(longPressTimer),{passive:true});
+
+
+// Global Error Handler
+window.onerror=function(msg,url,line,col,err){
+  console.error('Error:',msg,'at',url,':',line);
+  toast('⚠️ '+msg);
+  return false;
+};
+window.addEventListener('unhandledrejection',e=>{
+  console.error('Unhandled:',e.reason);
+  toast('⚠️ Connection issue');
+});
+// Auto-backup to localStorage every minute
+setInterval(()=>{
+  try{
+    const backup={conversations:chatHistory,settings:{lang:localStorage.getItem('hermes_lang'),accent:localStorage.getItem('hermes_accent'),personality:localStorage.getItem('hermes_personality')},ts:Date.now()};
+    localStorage.setItem('hermes_autobackup',JSON.stringify(backup));
+  }catch(e){}
+},60000);
+// Restore from backup if needed
+function restoreFromBackup(){
+  try{
+    const b=JSON.parse(localStorage.getItem('hermes_autobackup')||'{}');
+    if(b.conversations&&Object.keys(b.conversations).length>0){
+      Object.assign(chatHistory,b.conversations);
+      saveConversations();
+      toast('💾 Restored from backup');
+    }
+  }catch(e){}
+}
+// Connection status
+function checkConnection(){return navigator.onLine;}
+window.addEventListener('offline',()=>toast('📡 Offline mode'));
+window.addEventListener('online',()=>toast('✅ Back online'));
+// Retry failed requests
+async function fetchWithRetry(url,opts,retries=3){
+  for(let i=0;i<retries;i++){
+    try{return await fetch(url,opts);}
+    catch(e){if(i===retries-1)throw e;await new Promise(r=>setTimeout(r,1000*(i+1)));}
+  }
+}
+
 applyLang();applyWallpaper();input.focus();
+// Service Worker for offline
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
+// Performance: debounce scroll
+let scrollTimer;function debouncedScroll(){clearTimeout(scrollTimer);scrollTimer=setTimeout(scrollDown,50);}
+// Cache conversations in memory
+const convCache=new Map();
+function getCachedConv(id){if(convCache.has(id))return convCache.get(id);const c=chatHistory[id];if(c)convCache.set(id,c);return c;}
+
 // Apply saved theme + personality + font
 (function(){
   const accent=localStorage.getItem('hermes_accent')||'#2979ff';
