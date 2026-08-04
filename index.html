@@ -1080,6 +1080,37 @@ document.addEventListener('touchstart',e=>{
 document.addEventListener('touchend',()=>clearTimeout(longPressTimer),{passive:true});
 
 
+
+// GitHub Cloud Sync
+async function syncToGitHub(){
+  try{
+    const convs=JSON.parse(localStorage.getItem('hermes_conversations')||'{}');
+    for(const [id,data] of Object.entries(convs)){
+      await fetch('/api/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,data})});
+    }
+    toast(isFA?'☁️ ذخیره در ابر شد':'☁️ Saved to cloud');
+  }catch(e){console.error('Sync error:',e);}
+}
+async function loadFromGitHub(){
+  try{
+    const res=await fetch('/api/conversations');
+    const cloud=await res.json();
+    if(Object.keys(cloud).length>0){
+      const local=JSON.parse(localStorage.getItem('hermes_conversations')||'{}');
+      // Merge: cloud + local (local wins for conflicts)
+      const merged={...cloud,...local};
+      localStorage.setItem('hermes_conversations',JSON.stringify(merged));
+      Object.assign(chatHistory,merged);
+      saveConversations();
+      toast(isFA?'📥 از ابر بارگذاری شد':'📥 Loaded from cloud');
+    }
+  }catch(e){console.error('Load error:',e);}
+}
+// Auto sync every 5 minutes
+setInterval(syncToGitHub,300000);
+// Load from cloud on start
+loadFromGitHub();
+
 // Global Error Handler (console only - no UI spam)
 window.onerror=function(msg,url,line,col,err){
   console.error('[Hermes]',msg,'at',url+':'+line);

@@ -35,8 +35,64 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.wfile.write(data)
             except Exception as e:
                 self.send_response(500); self.end_headers(); self.wfile.write(str(e).encode())
+        
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200); self.send_header('Content-Type','application/json'); self._cors(); self.end_headers()
+            self.wfile.write(b'{"status":"ok"}')
+        elif self.path.startswith('/api/conversations'):
+            # Load conversations from GitHub
+            try:
+                gh_token = os.environ.get('GITHUB_TOKEN', '')
+                gh_repo = os.environ.get('GITHUB_REPO', 'khosrozadeganjavad-ai/hermes-miniapp')
+                if not gh_token:
+                    self.send_response(200); self.send_header('Content-Type','application/json'); self._cors(); self.end_headers()
+                    self.wfile.write(b'{}'); return
+                req = urllib.request.Request(f'https://api.github.com/repos/{gh_repo}/contents/conversations', headers={'Authorization': f'token {gh_token}', 'User-Agent': 'Hermes'})
+                ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+                resp = urllib.request.urlopen(req, timeout=10, context=ctx)
+                data = json.loads(resp.read())
+                result = {}
+                for item in data:
+                    if item['name'].endswith('.json'):
+                        fname = item['name'][:-5]
+                        raw = urllib.request.urlopen(item['download_url'], timeout=10, context=ctx)
+                        result[fname] = json.loads(raw.read())
+                self.send_response(200); self.send_header('Content-Type','application/json'); self._cors(); self.end_headers()
+                self.wfile.write(json.dumps(result).encode())
+            except Exception as e:
+                self.send_response(200); self.send_header('Content-Type','application/json'); self._cors(); self.end_headers()
+                self.wfile.write(b'{}')
         else: self.send_error(404)
     def do_POST(self):
+        if self.path == '/api/conversations':
+            try:
+                gh_token = os.environ.get('GITHUB_TOKEN', '')
+                gh_repo = os.environ.get('GITHUB_REPO', 'khosrozadeganjavad-ai/hermes-miniapp')
+                length = int(self.headers.get('Content-Length', 0))
+                body = json.loads(self.rfile.read(length))
+                conv_id = body.get('id', 'default')
+                conv_data = json.dumps(body.get('data', {}), ensure_ascii=False)
+                import base64
+                # Check if file exists
+                try:
+                    check_req = urllib.request.Request(f'https://api.github.com/repos/{gh_repo}/contents/conversations/{conv_id}.json', headers={'Authorization': f'token {gh_token}', 'User-Agent': 'Hermes'})
+                    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+                    existing = json.loads(urllib.request.urlopen(check_req, timeout=10, context=ctx).read())
+                    sha = existing.get('sha', '')
+                except: sha = ''
+                # Create or update
+                payload = {'message': f'Update {conv_id}', 'content': base64.b64encode(conv_data.encode()).decode(), 'branch': 'main'}
+                if sha: payload['sha'] = sha
+                put_req = urllib.request.Request(f'https://api.github.com/repos/{gh_repo}/contents/conversations/{conv_id}.json', data=json.dumps(payload).encode(), headers={'Authorization': f'token {gh_token}', 'Content-Type': 'application/json', 'User-Agent': 'Hermes'}, method='PUT')
+                ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+                urllib.request.urlopen(put_req, timeout=15, context=ctx)
+                self.send_response(200); self.send_header('Content-Type','application/json'); self._cors(); self.end_headers()
+                self.wfile.write(b'{"ok":true}')
+            except Exception as e:
+                self.send_response(500); self.send_header('Content-Type','application/json'); self._cors(); self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode())
+            return
         if self.path != '/v1/chat/completions': self.send_error(404); return
         try:
             c=load_api_config(); length=int(self.headers.get('Content-Length',0)); body=self.rfile.read(length); data=json.loads(body)
