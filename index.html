@@ -506,12 +506,6 @@ function checkDailyNotification(){
 if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
 setTimeout(checkDailyNotification,3000);
 
-// Calculator
-function tryCalc(text){
-  const m=text.match(/^[\d+\-*/().%\s]+$/);
-  if(m){try{const r=eval(text);return isFA?'نتیجه: '+r:'Result: '+r;}catch(e){}return null;}
-}
-
 // Conversations
 function loadConversations(){try{return JSON.parse(localStorage.getItem('hermes_chats')||'{}')}catch(e){return{}}}
 function saveConversations(){localStorage.setItem('hermes_chats',JSON.stringify(chatHistory))}
