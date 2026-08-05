@@ -383,6 +383,7 @@ h2,h3,h4{margin:8px 0 4px;color:var(--text)}
         <div class="settings-item" onclick="openModelPicker()"><div class="si-icon orange">&#129302;</div><div class="si-text">مدل AI</div><div class="si-value" id="modelVal">Hermes</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="cycleFontSize()"><div class="si-icon pink">&#128207;</div><div class="si-text">اندازه متن</div><div class="si-value">14px</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="toggleAutoTranslate()"><div class="si-icon green">&#127760;</div><div class="si-text">ترجمه خودکار</div><div class="si-value" id="translateVal">غیرفعال</div><div class="si-arrow">&#10095;</div></div>
+        <div class="settings-item" onclick="toggleAutoTTS()"><div class="si-icon orange">&#128266;</div><div class="si-text">پاسخ صوتی خودکار</div><div class="si-value" id="autoTTSVal">غیرفعال</div><div class="si-arrow">&#10095;</div></div>
         <div class="settings-item" onclick="showStats()"><div class="si-icon purple">&#128200;</div><div class="si-text">آمار استفاده</div><div class="si-arrow">&#10095;</div></div>
       </div>
     </div>
@@ -416,7 +417,7 @@ if(tg){tg.ready();tg.expand();tg.setHeaderColor('#1a6dff');tg.setBackgroundColor
 
 const $=id=>document.getElementById(id);
 const messages=$('messages'),input=$('input'),sendBtn=$('sendBtn'),previewEl=$('preview'),fileInput=$('fileInput'),API=window.location.origin+'/v1/chat/completions';
-let chatHistory=loadConversations(),currentId=Date.now().toString(),loading=false,imageData=null,isFA=true,accentIdx=0,isDark=true;
+let chatHistory=loadConversations(),currentId=Date.now().toString(),loading=false,imageData=null,isFA=true,accentIdx=0,isDark=true,autoTTS=localStorage.getItem('hermes_autoTTS')==='true';
 
 const ACCENTS=['#2979ff','#e91e7a','#7c3aed','#22c55e','#f59e0b','#ef4444'];
 const ACCENT_NAMES={fa:['آبی','صورتی','بنفش','سبز','نارنجی','قرمز','فیروزه‌ای','یاسی'],en:['Blue','Pink','Purple','Green','Orange','Red','Teal','Lilac']};
@@ -718,6 +719,14 @@ async function sendVoiceMessage(text){
 }
 
 
+
+function toggleAutoTTS(){
+  autoTTS=!autoTTS;
+  localStorage.setItem('hermes_autoTTS',autoTTS);
+  $('autoTTSVal').textContent=isFA?(autoTTS?'فعال':'غیرفعال'):(autoTTS?'ON':'OFF');
+  toast(isFA?(autoTTS?'🗣️ پاسخ خودکار صوتی فعال':'🗣️ پاسخ خودکار صوتی غیرفعال'):(autoTTS?'🗣️ Auto-TTS ON':'🗣️ Auto-TTS OFF'));
+}
+
 // Q4 Features
 
 // 1. Multi-Model Selector
@@ -976,7 +985,7 @@ async function send(){
   const finalSys=sysPrompt+profileName;
   try{const allMsgs=[{role:'system',content:finalSys},...chat.messages.slice(-30).map(m=>({role:m.role,content:m.content}))];
       const res=await sendWithFallback(allMsgs,getModelId());rmTyping();if(!res.ok){const errBody=await res.text().catch(()=>'');if(res.status===429)throw new Error(t.fa?'مدل شلوغه، لطفاً چند لحظه صبر کنید':'Model busy, please wait a moment');throw new Error('API '+res.status);}const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');notifyBot(bot);
-playReceiveSound();}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
+playReceiveSound();if(autoTTS&&bot){const u=new SpeechSynthesisUtterance(bot);u.lang=isFA?'fa-IR':'en-US';u.rate=1;u.pitch=1;window.speechSynthesis.speak(u);}}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
   loading=false;sendBtn.disabled=!input.value.trim();
 }
 
@@ -1149,7 +1158,7 @@ async function fetchWithRetry(url,opts,retries=3){
   }
 }
 
-applyLang();applyWallpaper();input.focus();
+applyLang();applyWallpaper();if(autoTTS){const el=document.getElementById('autoTTSVal');if(el)el.textContent=isFA?'فعال':'ON';}input.focus();
 // Service Worker for offline
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
 // Performance: debounce scroll
