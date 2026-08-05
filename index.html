@@ -675,17 +675,30 @@ async function sendVoiceMessage(text){
   $("voiceStatus").textContent="فکر میکنم...";$("voiceSub").textContent=text;
   animateVoiceWaves(false);
   input.value=text;
-  await send();
+  loading=false; // Reset loading so send() can run
+  try{
+    await send();
+  }catch(e){console.error('Voice send error:',e);}
+  // Wait a bit for response to appear
+  await new Promise(r=>setTimeout(r,500));
   if(voiceModeActive){
     const lastBot=messages.querySelector(".msg.bot:last-child .bubble");
-    if(lastBot){
+    if(lastBot&&lastBot.textContent.trim()){
       $("voiceAvatar").className="voice-avatar speaking";
       $("voiceStatus").textContent="دارم جواب میدم...";
       animateVoiceWaves(true);
-      const u=new SpeechSynthesisUtterance(lastBot.textContent);
+      const text=lastBot.textContent.trim();
+      const u=new SpeechSynthesisUtterance(text);
       u.lang=isFA?"fa-IR":"en-US";u.rate=1;u.pitch=1;
+      u.onerror=()=>{voiceContinuous=false;$("voiceAvatar").className="voice-avatar listening";$("voiceStatus").textContent="گوش میدم...";animateVoiceWaves(false);setTimeout(()=>{if(voiceModeActive)startVoiceListening();},300);};
       u.onend=()=>{voiceContinuous=false;$("voiceAvatar").className="voice-avatar listening";$("voiceStatus").textContent="گوش میدم...";animateVoiceWaves(false);setTimeout(()=>{if(voiceModeActive)startVoiceListening();},300);};
       window.speechSynthesis.speak(u);
+    }else{
+      // No response - go back to listening
+      $("voiceAvatar").className="voice-avatar listening";
+      $("voiceStatus").textContent="گوش میدم...";
+      animateVoiceWaves(false);
+      if(voiceModeActive)startVoiceListening();
     }
   }
 }
