@@ -417,7 +417,7 @@ if(tg){tg.ready();tg.expand();tg.setHeaderColor('#1a6dff');tg.setBackgroundColor
 
 const $=id=>document.getElementById(id);
 const messages=$('messages'),input=$('input'),sendBtn=$('sendBtn'),previewEl=$('preview'),fileInput=$('fileInput'),API=window.location.origin+'/v1/chat/completions';
-let chatHistory=loadConversations(),currentId=Date.now().toString(),loading=false,imageData=null,isFA=true,accentIdx=0,isDark=true,autoTTS=localStorage.getItem('hermes_autoTTS')==='true';
+let chatHistory=loadConversations(),currentId=Date.now().toString(),loading=false,imageData=null,isFA=true,accentIdx=0,isDark=true,autoTTS=localStorage.getItem('hermes_autoTTS')!=='false';
 
 const ACCENTS=['#2979ff','#e91e7a','#7c3aed','#22c55e','#f59e0b','#ef4444'];
 const ACCENT_NAMES={fa:['آبی','صورتی','بنفش','سبز','نارنجی','قرمز','فیروزه‌ای','یاسی'],en:['Blue','Pink','Purple','Green','Orange','Red','Teal','Lilac']};
@@ -985,7 +985,7 @@ async function send(){
   const finalSys=sysPrompt+profileName;
   try{const allMsgs=[{role:'system',content:finalSys},...chat.messages.slice(-30).map(m=>({role:m.role,content:m.content}))];
       const res=await sendWithFallback(allMsgs,getModelId());rmTyping();if(!res.ok){const errBody=await res.text().catch(()=>'');if(res.status===429)throw new Error(t.fa?'مدل شلوغه، لطفاً چند لحظه صبر کنید':'Model busy, please wait a moment');throw new Error('API '+res.status);}const reader=res.body.getReader(),dec=new TextDecoder();let bot='';const b=addStream();while(true){const{done,value}=await reader.read();if(done)break;for(const line of dec.decode(value).split('\n')){if(line.startsWith('data: ')&&line!=='data: [DONE]'){try{const d=JSON.parse(line.slice(6)),c=d.choices?.[0]?.delta?.content;if(c){bot+=c;b.textContent=bot;scrollDown();}}catch(e){}}}}if(!bot)throw new Error(t.conn);chat.messages.push({role:'assistant',content:bot,ts:Date.now()});saveConversations();if(tg?.HapticFeedback)tg.HapticFeedback.notificationOccurred('success');notifyBot(bot);
-playReceiveSound();if(autoTTS&&bot){const u=new SpeechSynthesisUtterance(bot);u.lang=isFA?'fa-IR':'en-US';u.rate=1;u.pitch=1;window.speechSynthesis.speak(u);}}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
+playReceiveSound();if(autoTTS&&bot&&window.speechSynthesis){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(bot);u.lang=isFA?'fa-IR':'en-US';u.rate=1;u.pitch=1;u.onerror=()=>console.log('TTS error');window.speechSynthesis.speak(u);}}catch(e){rmTyping();addMsg(t.err+e.message,'bot');toast(t.conn);}
   loading=false;sendBtn.disabled=!input.value.trim();
 }
 
