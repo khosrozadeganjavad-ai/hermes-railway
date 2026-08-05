@@ -706,7 +706,7 @@ const MODELS=[
   {name:"Laguna",nameEn:"Poolside Laguna",id:"poolside/laguna-s-2.1:free",icon:"🌊",color:"linear-gradient(135deg,#0288d1,#01579b)"},
   {name:"Auto",nameEn:"Best Free",id:"openrouter/free",icon:"🔄",color:"linear-gradient(135deg,#607d8b,#455a64)"}
 ];
-let modelIdx=parseInt(localStorage.getItem("hermes_model")||"2");
+let modelIdx=parseInt(localStorage.getItem("hermes_model")||"0");
 function openModelPicker(){
   const items=MODELS.map((m,i)=>({...m,name:m.name+(m.soon?(isFA?" (بزودی)":" (soon)"):"")}));
   showPicker(isFA?"مدل هوش مصنوعی":"AI Model",items,modelIdx,i=>{
@@ -917,12 +917,12 @@ function showModal(src){const m=document.createElement('div');m.className='modal
 
 // Retry with fallback models
 const FALLBACK_MODELS=['nvidia/nemotron-3-super-120b-a12b:free','nvidia/nemotron-3-ultra-550b-a55b:free','openai/gpt-oss-20b:free'];
-async function sendWithFallback(messages,model,retries=2){
+async function sendWithFallback(messages,model,retries=3){
   for(let i=0;i<=retries;i++){
     try{
       const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:i===0?model:FALLBACK_MODELS[i%FALLBACK_MODELS.length],messages,stream:true})});
       if(res.ok)return res;
-      if(res.status===429){await new Promise(r=>setTimeout(r,500*(i+1)));continue;}
+      if(res.status===429){await new Promise(r=>setTimeout(r,1000*(i+1)));continue;}
       return res;
     }catch(e){if(i===retries)throw e;await new Promise(r=>setTimeout(r,500*(i+1)));}
   }
